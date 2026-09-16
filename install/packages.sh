@@ -55,11 +55,15 @@ PREPARE
 )
 
 install_local_packages() {
-  local name recipe upstream identity
-  while read -r name recipe upstream; do
+  local name recipe upstream identity entry
+  local -a entries
+  # Finish reading the manifest before builds run; prompts retain caller stdin.
+  mapfile -t entries < <(read_manifest "$ROOT/install/packages-aur")
+  for entry in "${entries[@]}"; do
+    read -r name recipe upstream <<< "$entry"
     log "Reviewed AUR build: $name"
     build_package "$name" "$recipe" "$upstream"
-  done < <(read_manifest "$ROOT/install/packages-aur")
+  done
   identity=$(sha256sum "$ROOT/config/st/PKGBUILD" "$ROOT/config/st/config.h" | sha256sum | cut -d ' ' -f1)
   log 'Local stock st build'
   build_package st-minarch "$identity"

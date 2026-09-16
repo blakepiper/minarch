@@ -37,6 +37,39 @@ class Sandbox(unittest.TestCase):
         path.chmod(0o755)
 
 
+class AurManifestInput(Sandbox):
+    def test_child_prompts_cannot_consume_manifest_entries(self):
+        repo = self.base / "repo"
+        (repo / "install").mkdir(parents=True)
+        (repo / "install/packages-aur").write_text(
+            "# reviewed recipes\n\nfirst-package recipe-a source-a\n"
+            "second-package recipe-b - # inline comment\n")
+        (repo / "config/st").mkdir(parents=True)
+        for name in ["PKGBUILD", "config.h"]:
+            (repo / "config/st" / name).write_text("test fixture\n")
+        calls = self.base / "calls"
+        self.env["TEST_CALLS"] = str(calls)
+        self.command("build-prompt", '''
+read -r answer
+printf '%s|%s|%s|%s\\n' "$1" "$2" "${3:--}" "$answer" >> "$TEST_CALLS"
+''')
+        run(["bash", "-euo", "pipefail", "-c", '''
+source "$1/install/common.sh"
+source "$1/install/packages.sh"
+ROOT=$2
+build_package() { build-prompt "$@"; }
+install_local_packages
+''', "test", str(ROOT), str(repo)], env=self.env,
+            input="first-answer\nsecond-answer\nst-answer\n")
+        rows = calls.read_text().splitlines()
+        self.assertEqual(len(rows), 3)
+        self.assertEqual(rows[:2], ["first-package|recipe-a|source-a|first-answer",
+                                    "second-package|recipe-b|-|second-answer"])
+        name, identity, upstream, answer = rows[2].split("|")
+        self.assertEqual((name, upstream, answer), ("st-minarch", "-", "st-answer"))
+        self.assertTrue(identity)
+
+
 class ConfigSafety(Sandbox):
     def install(self, source, target, replace=False):
         return run(["bash", "-c", 'source "$1"; install_config "$2" "$3"', "test",
