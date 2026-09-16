@@ -1,0 +1,11 @@
+[Unit]
+Description=Event-driven text clipboard history
+PartOf=minarch-session.target
+After=minarch-lock.service
+
+[Service]
+Type=exec
+Environment=CM_SELECTIONS=clipboard CM_MAX_CLIPS=100 CM_OWN_CLIPBOARD=0 CM_LAUNCHER=dmenu
+UMask=0077
+ExecStart=/usr/bin/clipmenud
+Restart=no

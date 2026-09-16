@@ -1,35 +1,279 @@
 # Minarch
 
-Minarch's canonical Neovim configuration is the complete Blarchy
-configuration in [`config/nvim/`](config/nvim). Its LazyVim/lazy.nvim architecture,
-plugin overrides and lockfile are preserved. The existing Seafoam highlight
-mappings now use oxwm’s default navy/gray palette and colorful accents. See
-[upstream provenance and dependency notes](docs/neovim-upstream.md).
+A small, keyboard-first **post-install configuration for Arch Linux x86_64**.
+Xorg runs OXWM, its built-in bar, and unpatched st. tmux supplies panes and
+scrollback; the existing Blarchy Neovim configuration and Codex supply the
+primary development workflow. No desktop environment, compositor, graphical
+login manager, or background optimization suite.
 
-Run `./install.sh` as your regular user on Arch Linux to install the editor
-packages with `sudo pacman` and seed `~/.config/nvim/` (or `$XDG_CONFIG_HOME/nvim`).
-Use `./install.sh --config-only` to seed configuration without installing packages.
-This repository currently contains the editor portion of Minarch.
+Minarch does not install Arch, partition disks, change filesystems, configure
+EFI, or install a bootloader. It prefers low idle activity and understandable
+components over counting installed packages.
 
-Existing configuration, including symlinks, is preserved by default. To replace
-it explicitly, use `./install.sh --replace-config`; the installer first copies
-the new configuration into staging, then moves the original to a unique
-`nvim.backup.XXXXXXXX/nvim` beneath the config directory. The printed backup path
-can be moved back after moving the replacement aside. Plugin data is retained.
+## Starting state and installation
 
-Open `nvim` to let the upstream bootstrap install plugins and tools. Ordinary
-upstream update behavior remains enabled and can change the installed lockfile.
-To reproduce the imported plugin revisions after bootstrap or updates, close
-Neovim, copy `config/nvim/lazy-lock.json` from this repository back into your
-installed Neovim config directory, then run `nvim --headless '+Lazy! restore' '+qa!'`.
+Use `archinstall` to install a minimal system with no desktop. Use the normal
+Linux kernel, configure your bootloader, and create a normal sudo-capable user.
+Networking must already work (NetworkManager is a good choice), and `git` must
+be installed. Minarch leaves network ownership unchanged; it does not enable a
+second network manager or install a network applet.
 
-Run `scripts/smoke-test.sh` to verify installed configuration files, or
-`scripts/smoke-test.sh --headless` to also check actual Neovim startup. The latter
-may download plugins/tools on a fresh installation and fails on configuration
-errors, missing Neovim, or a 180-second timeout. It checks startup, not every
-interactive feature or completion of all background tool downloads.
-Install the package manifest before the first startup: without `tree-sitter`
-available, upstream can race two Mason installation requests for that tool.
+As that normal user:
 
-Run `tests/install.sh` to verify config seeding, preservation, and backup behavior
-in temporary directories without changing your own configuration.
+```sh
+git clone https://github.com/blakepiper/minarch.git ~/minarch
+cd ~/minarch
+./install.sh
+```
+
+The SSH clone URL `git@github.com:blakepiper/minarch.git` also works if your SSH
+keys are already configured. The installer rejects root, checks Arch/x86_64,
+sudo and HTTPS access, upgrades official packages with `pacman -Syu --needed`,
+builds reviewed/pinned AUR packages as your user, and installs configuration.
+Package-manager prompts are normal. A failed stage can be fixed and rerun.
+Nothing uninstalls unrelated user packages or enables an SSH server.
+
+Read all **Preserved:** messages. On a fresh installation, Arch's existing Bash
+startup files may be retained. Session PATH setup works independently. To
+replace differing managed defaults with backups:
+
+```sh
+./install.sh --replace-config
+```
+
+`--config-only` installs user files without packages, sudo, or system changes;
+it is useful for inspection and tests, not a substitute for the full install.
+
+## First login and X
+
+Reboot after installation if the kernel or input rules changed. Log in on a
+local TTY and run:
+
+```sh
+startx
+```
+
+Minarch deliberately uses **manual startx**. There is no autologin or automatic
+restart loop. Exiting OXWM returns to the TTY shell. `~/.xinitrc` imports the
+local logind session into the user service manager, configures US keyboard
+layout/repeat and a solid dark root background, starts session services, and
+ends in `exec oxwm`. No wallpaper process runs.
+
+The default layout is master/stack tiling with 8 px gaps and 2 px borders.
+The bar shows tags and a minute-resolution clock; a battery block is included
+only when a battery is detected. OXWM configuration is Lua at
+`~/.config/oxwm/config.lua`. **Super+Shift+R** hot-reloads it. See the complete
+[actual keybindings](docs/KEYBINDS.md), including stack and monitor semantics.
+
+Common actions:
+
+| Keys | Action |
+| --- | --- |
+| Super+Enter | st |
+| Super+Space / Super+D | dmenu command search |
+| Super+F / Super+B | Xfe / Firefox |
+| Super+1…9 | View tag |
+| Super+Shift+1…9 | Send window to tag |
+| Super+Q / Super+P | Close / toggle floating |
+| Super+L | Lock |
+| Super+Shift+Space | Control menu |
+| Super+Shift+S | Drag-region screenshot |
+| Super+V | Text clipboard history |
+
+## Screenshots, clipboard, and locking
+
+`screenshot-region` saves a private PNG in `~/Pictures/Screenshots/` with a
+unique timestamped filename, then puts that exact PNG on the X clipboard as
+`image/png`. Drag with Super+Shift+S, capture the full screen with Print, or the
+focused window with Alt+Print. Escape leaves both saved screenshots and the
+clipboard unchanged. There is no editor or post-capture dialog. As usual on X11,
+xclip remains alive to serve a copied image until clipboard ownership changes.
+
+Super+V uses clipmenu and dmenu for **text history** (100 entries). The watcher
+uses X selection events rather than a polling timer. Image history is not
+provided; the current screenshot image can still be pasted. History is private
+to the user but contains copied text, potentially including secrets. Use
+`clipctl disable` / `clipctl enable` to pause/resume collection and `clipdel -d '.*'`
+to clear it. History uses clipmenu's runtime storage and does not need a daemon
+outside the X session.
+
+The control menu contains exactly Lock, Suspend, Reboot, Log Out, Monitors Off,
+and Power Off. Reboot, logout, and poweroff require Yes/No confirmation.
+The small polkit backend authorizes normal-user logind power actions; no GUI
+authentication agent or custom permission rules are installed. With additional
+active user sessions or blocking inhibitors, power actions may require a manual
+`sudo systemctl ...` from a terminal instead.
+XSecureLock is managed by `xss-lock`, which receives both explicit lock requests
+and logind suspend events. Its delay-inhibitor handshake waits for the lock to
+be ready before normal system suspend, including suspend initiated outside the
+menu. No idle timeout is enabled. Locking requires a normal local logind session;
+X startup checks that the lock service owns a logind sleep inhibitor before
+launching OXWM. Minarch manages one X session per user. Test lock/resume once on your
+actual machine before relying on it. Forced suspend that bypasses inhibitors is
+outside this guarantee. See [services and testing limits](docs/PERFORMANCE.md).
+
+## Files, browser, media, input
+
+Xfe is the maintained AUR `xfe` package. No automounter is included: manual
+mounting is sufficient. If you later want removable-media automation, install
+and configure udisks2/udiskie yourself; these are not part of Minarch's default.
+
+XDG defaults open directories with Xfe, web links with Firefox, audio/video with
+mpv, and common images with feh. feh is launched on demand as a viewer only.
+Firefox has Arch-packaged uBlock Origin and the requested enterprise policies:
+no sponsored shortcuts/stories/suggestions, no recommended Home stories, and
+AIControls default blocked. Check `about:policies` after opening Firefox.
+Normal hardware rendering is retained. No Dark Reader or graphics/process tweaks.
+
+PipeWire, WirePlumber, and pipewire-pulse handle audio. Volume, mute, microphone
+mute, media transport, and brightness keys are configured. Brightness is a no-op
+without a backlight interface. Touchpads use natural scrolling, tapping, and
+disable-while-typing. A udev classification applies natural scrolling to mice,
+excluding touchpads, tablets, and pointing sticks. Keyboard repeat is 250 ms/45 Hz.
+
+## Development
+
+Run `dev` in a project directory:
+
+```text
++--------------------------+--------------+
+|                          | shell        |
+| nvim .                   |              |
+| ~65% width               +--------------+
+|                          | hyfetch      |
+|                          | then shell   |
++--------------------------+--------------+
+```
+
+All panes start in the physical project directory. Session names combine a safe
+basename with a 12-character path hash, so equally named directories do not
+collide. Repeated `dev` reattaches, and running it inside tmux switches clients
+without nesting. The editor pane is selected on creation. Initial dimensions
+come from the terminal/client, with a sensible detached fallback. hyfetch may
+ask for its own first-run preferences. tmux's only supplied option is
+`set -g mouse on`; stock Ctrl+B bindings and copy mode provide scrollback.
+If you already have `~/.tmux.conf`, tmux may prefer it to the new XDG config.
+
+st is built from upstream 0.9.3 with a local font/palette configuration and no
+patches. Ctrl+Shift+C/V copy/paste, middle-click pastes PRIMARY, and Shift lets
+you select text when an application such as tmux handles the mouse. tmux supplies
+scrollback; st itself is intentionally not patched into a session manager.
+
+The complete Blarchy Neovim tree is committed in `config/nvim`, with provenance
+in `.minarch-source` and [upstream notes](docs/neovim-upstream.md). The only editor
+customization is the previously requested oxwm-like palette. LazyVim/lazy.nvim,
+keybindings, plugin specifications and lockfile are retained. No `~/blarchy`
+checkout is needed. First launch downloads plugins, parsers, and Mason tools.
+To restore exact imported plugin versions after bootstrap/updates, close Neovim,
+copy the repository's `lazy-lock.json` back to the installed config, and run
+`nvim --headless '+Lazy! restore' '+qa!'`.
+
+Codex comes from Arch **`openai-codex`**, now available in the official extra
+repository. Run `codex --version`, then `codex` in a project and choose your
+first-run authentication method. Browser authentication is manual; Minarch
+stores no keys or credentials and installs no other AI agents or desktop keyring.
+The package choice and current official guidance are recorded in
+[upstream verification](docs/UPSTREAM.md).
+
+Bash stays close to stock. If preserved startup files do not already expose user
+commands on the TTY, add `export PATH="$HOME/.local/bin:$PATH"` to your own Bash
+configuration. X sessions already export this PATH. JetBrains Mono Nerd Font,
+basic Noto coverage, and Noto Emoji are the only requested font families.
+
+## Updates and configuration ownership
+
+Official packages follow supported Arch rolling updates:
+
+```sh
+sudo pacman -Syu
+git -C ~/minarch pull --ff-only
+cd ~/minarch && ./install.sh
+```
+
+Do not use partial Arch upgrades. This is reproducible configuration plus pinned
+AUR/st inputs, not a frozen Arch package snapshot. Each installation records its
+installed package versions in `~/.local/state/minarch/packages-installed.txt`.
+For bit-identical OS packages, independently manage an Arch Linux Archive snapshot.
+
+AUR recipe commits and OXWM's source revision are pinned in
+`install/packages-aur`. Minarch builds them directly with makepkg; no AUR helper
+is required. Build dependencies may remain installed, consuming disk rather than
+idle CPU/RAM. To update AUR packages deliberately, review the new PKGBUILD, update
+the manifest pins, adapt the microphone keysym patch if necessary, run
+`test/validate-oxwm.sh`, and rerun the installer. AUR updates are not silently
+fetched from an unreviewed moving branch. st's version/config lives in `config/st`.
+
+Add official packages to `install/packages` and rerun. Removing a manifest entry
+does not uninstall it from an existing system; review usage and use pacman
+manually when removal is intended. [Package rationale](docs/PACKAGES.md) and
+[service/performance review](docs/PERFORMANCE.md) explain every direct choice.
+
+For all managed user/system config paths: absent files are installed; identical
+contents are left alone; differing files are **preserved** by default. Explicit
+`--replace-config` stages a complete copy first, then moves the previous file,
+directory, or symlink to `<target>.backup.XXXXXXXX/original`. Backups are adjacent
+to the target, printed to the terminal, and never duplicated for identical
+contents on rerun. To restore, move the replacement aside, then move `original`
+back to its original pathname (use sudo for `/etc`). Symlinks are moved as links.
+The complete Neovim directory is one managed unit. Package-managed binaries are
+updated through pacman rather than this config policy.
+
+## Checks and troubleshooting
+
+```sh
+./test/check.sh                 # shellcheck, bash -n, isolated helper/tmux tests
+./test/smoke.sh                 # installed-workstation checks
+./scripts/smoke-test.sh --headless  # explicit Neovim bootstrap/startup check
+./test/validate-oxwm.sh         # builds pinned OXWM and tests real parsed bindings
+python test/x11.py             # optional: Xvfb + installed X11 tools
+minarch-stats                  # on-demand system audit
+```
+
+The optional nested-X test needs `xorg-server-xvfb`, not installed by default.
+The OXWM build test needs `zig` and its build dependencies (installed when OXWM
+is built). No tests perform real suspend/reboot/poweroff or modify your main X
+session. See [validation results and remaining hardware checks](docs/VALIDATION.md).
+
+* **Xorg:** run `startx` from a local TTY, not sudo/SSH. Read
+  `~/.local/share/xorg/Xorg.0.log` and `journalctl -b`. Check `/dev/dri`, `lspci -k`,
+  and `xrandr`. Minarch uses kernel modesetting; no forced GPU Xorg config is
+  generated. Intel/AMD use Mesa. With NVIDIA detected, an existing proprietary
+  userspace is retained; otherwise Mesa plus the kernel's nouveau driver is the
+  conservative default. Some GPUs need a separately selected vendor driver;
+  see the hardware notes before installing one. Minarch does not guess generations.
+* **OXWM:** run `oxwm --validate ~/.config/oxwm/config.lua`, inspect the startx
+  output, and use Super+Shift+R. The pinned Zig version of OXWM has 65 configured
+  bindings. A single keysym-table patch supplies XF86AudioMicMute; see upstream notes.
+* **Session/lock:** inspect `journalctl --user -u minarch-lock.service` and
+  `systemctl --user status minarch-session.target`. Confirm
+  `systemctl --user show-environment` includes DISPLAY and XDG_SESSION_ID. The
+  clipboard watcher stops with the session target when the lock process loses X.
+* **st:** check `fc-match 'JetBrainsMono Nerd Font'`, UTF-8 locale (`locale`), and
+  `infocmp st-256color` (supplied by Arch ncurses). Rebuild with `./install.sh`
+  after changing `config/st/config.h`. There is no transparency or scrollback patch.
+* **Audio:** run `wpctl status`; inspect user PipeWire/WirePlumber units.
+* **Networking:** keep your current stack; with NetworkManager use `nmcli`.
+* **Microcode:** Minarch adds the appropriate CPU package but does not rewrite
+  boot configuration. Verify your existing boot setup loads it; inspect
+  `journalctl -k -b | grep -i microcode`.
+
+Useful audit commands:
+
+```sh
+systemd-analyze
+systemd-analyze blame
+systemctl --type=service --state=running
+systemctl --user --type=service --state=running
+free -h
+ps aux --sort=-%mem
+pstree
+pacman -Q
+xrandr
+glxinfo -B
+```
+
+Deliberate omissions include Bluetooth, printing/discovery, automounting,
+notifications, portals, privilege agents, keyrings, a firewall manager, sshd,
+wallpaper/compositor processes, indexing, night mode, tuning daemons, and
+unmeasured kernel/sysctl tweaks. Pre-existing user software is reported and
+retained, so Minarch does not claim to remove background services you installed.

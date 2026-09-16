@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Standard Arch xinit hooks import DISPLAY/XAUTHORITY into the user bus.
+if [[ -d /etc/X11/xinit/xinitrc.d ]]; then
+  for hook in /etc/X11/xinit/xinitrc.d/?*.sh; do
+    # shellcheck disable=SC1090
+    [[ ! -x $hook ]] || source "$hook"
+  done
+fi
+export PATH="$HOME/.local/bin:$PATH"
+export XDG_CURRENT_DESKTOP=OXWM
+export XDG_SESSION_TYPE=x11
+export CM_LAUNCHER=dmenu
+export CM_SELECTIONS=clipboard
+export CM_MAX_CLIPS=100
+export CM_OWN_CLIPBOARD=0
+export MINARCH_BATTERY=''
+for battery in /sys/class/power_supply/*; do
+  [[ -r $battery/type ]] || continue
+  if [[ $(cat "$battery/type") == Battery ]]; then
+    MINARCH_BATTERY=$(basename "$battery")
+    break
+  fi
+done
+xsetroot -solid '#1a1b26'
+setxkbmap us
+xset r rate 250 45
+# No idle locking or automatic display blanking. Manual DPMS still works.
+xset s off
+xset +dpms
+xset dpms 0 0 0
+if [[ -z ${XDG_SESSION_ID:-} ]]; then
+  XDG_SESSION_ID=$(loginctl show-session self -p Id --value) || exit 1
+  export XDG_SESSION_ID
+fi
+[[ -n $XDG_SESSION_ID ]] || { echo 'No local logind session; cannot arrange suspend locking.' >&2; exit 1; }
+systemctl --user import-environment DISPLAY XAUTHORITY PATH XDG_CURRENT_DESKTOP XDG_SESSION_TYPE XDG_SESSION_ID
+systemctl --user daemon-reload
+systemctl --user start minarch-session.target || {
+  echo 'Unable to start session locking/services; see journalctl --user.' >&2
+  exit 1
+}
+# Type=exec confirms process creation, not its asynchronous logind handshake.
+# Confirm this lock service owns a sleep inhibitor before exposing the desktop.
+ready=false
+for ((attempt = 0; attempt < 50; attempt++)); do
+  lock_pid=$(systemctl --user show minarch-lock.service -p MainPID --value)
+  if busctl --timeout=2 --json=short call org.freedesktop.login1 /org/freedesktop/login1 \
+    org.freedesktop.login1.Manager ListInhibitors | \
+    jq -e --argjson pid "${lock_pid:-0}" '.data[0][] | select(.[5] == $pid and .[3] == "delay" and (.[0] | split(":") | index("sleep")))' >/dev/null; then
+    ready=true
+    break
+  fi
+  systemctl --user is-active --quiet minarch-lock.service || break
+  sleep 0.1
+done
+if ! "$ready"; then
+  systemctl --user stop minarch-session.target
+  echo 'No suspend-lock inhibitor; inspect journalctl --user -u minarch-lock.service.' >&2
+  exit 1
+fi
+exec oxwm

@@ -1,0 +1,15 @@
+{
+  "policies": {
+    "FirefoxHome": {
+      "SponsoredTopSites": false,
+      "Stories": false,
+      "SponsoredStories": false
+    },
+    "FirefoxSuggest": {
+      "SponsoredSuggestions": false
+    },
+    "AIControls": {
+      "Default": { "Value": "blocked", "Locked": true }
+    }
+  }
+}

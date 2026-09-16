@@ -1,48 +1,54 @@
 #!/usr/bin/env bash
 set -euo pipefail
-root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-replace=false
-packages=true
+ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+# shellcheck source=install/common.sh
+source "$ROOT/install/common.sh"
+REPLACE_CONFIG=false
+CONFIG_ONLY=false
 for arg in "$@"; do
-  case "$arg" in
-    --replace-config) replace=true ;;
-    --config-only) packages=false ;;
+  case $arg in
+    --replace-config) REPLACE_CONFIG=true ;;
+    --config-only) CONFIG_ONLY=true ;;
     --help)
-      echo 'Usage: ./install.sh [--config-only] [--replace-config]'
-      echo 'Installs editor packages and seeds config; existing config is preserved by default.'
+      echo 'Usage: ./install.sh [--replace-config] [--config-only]'
+      echo 'Existing differing configs are preserved unless --replace-config is used.'
+      echo '--config-only seeds user files only, without packages, sudo, or system changes.'
       exit 0 ;;
-    *) echo "Unknown option: $arg" >&2; exit 2 ;;
+    *) die "Unknown option: $arg" ;;
   esac
 done
-
-if "$packages"; then
-  mapfile -t editor_packages < <(sed 's/#.*//; /^[[:space:]]*$/d' "$root/packages/neovim.txt")
-  sudo pacman -S --needed -- "${editor_packages[@]}"
+(( EUID != 0 )) || die 'Run as a normal sudo-capable user, not root.'
+STATE=${XDG_STATE_HOME:-"$HOME/.local/state"}/minarch
+mkdir -p "$STATE"
+exec 9>"$STATE/install.lock"
+flock -n 9 || die 'Another Minarch installation is running.'
+trap 'printf "ERROR: stage failed at line %s; fix the error above and rerun.\n" "$LINENO" >&2' ERR
+# shellcheck source=install/user.sh
+source "$ROOT/install/user.sh"
+if "$CONFIG_ONLY"; then
+  install_user
+  exit 0
 fi
-
-config_home=${XDG_CONFIG_HOME:-"$HOME/.config"}
-mkdir -p -- "$config_home"
-target=$config_home/nvim
-if [[ -e "$target" || -L "$target" ]]; then
-  if ! "$replace"; then
-    echo "Preserved existing $target (use --replace-config to back it up and replace it)."
-    exit 0
-  fi
-fi
-
-# Stage the complete copy before moving any existing configuration.
-stage=$(mktemp -d "$config_home/.minarch-nvim.XXXXXXXX")
-trap 'rm -rf -- "$stage"' EXIT
-cp -a -- "$root/config/nvim" "$stage/nvim"
-if [[ -e "$target" || -L "$target" ]]; then
-  backup=$(mktemp -d "$config_home/nvim.backup.XXXXXXXX")
-  mv -T -- "$target" "$backup/nvim"
-  echo "Backed up existing configuration to $backup/nvim"
-fi
-if ! mv -T -- "$stage/nvim" "$target"; then
-  if [[ -n ${backup:-} ]]; then
-    mv -T -- "$backup/nvim" "$target"
-  fi
-  exit 1
-fi
-echo "Installed Blarchy Neovim configuration to $target"
+[[ -f /etc/arch-release ]] || die 'Minarch requires an existing Arch Linux installation.'
+[[ $(uname -m) == x86_64 ]] || die 'Minarch v1 supports x86_64.'
+command -v sudo >/dev/null || die 'Install sudo and grant this user access first.'
+sudo -v || die 'Working sudo access is required.'
+command -v git >/dev/null || die 'Install git first.'
+log 'Checking HTTPS networking before package installation'
+timeout 30s git ls-remote https://github.com/tonybanters/oxwm.git HEAD >/dev/null || die 'HTTPS networking failed; fix networking and retry.'
+# shellcheck source=install/hardware.sh
+source "$ROOT/install/hardware.sh"
+# shellcheck source=install/packages.sh
+source "$ROOT/install/packages.sh"
+# shellcheck source=install/system.sh
+source "$ROOT/install/system.sh"
+install_packages
+install_local_packages
+install_system
+install_user
+log 'Validation'
+oxwm --validate "${XDG_CONFIG_HOME:-$HOME/.config}/oxwm/config.lua"
+codex --version
+pacman -Q > "$STATE/packages-installed.txt"
+printf '\nMinarch installed. Review preserved-file messages above, then reboot if the kernel changed.\n'
+printf 'Log in on a TTY and run startx. Run ~/minarch/test/smoke.sh after installation.\n'

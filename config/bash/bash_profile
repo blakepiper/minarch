@@ -1,0 +1,4 @@
+# shellcheck shell=bash
+# Minarch: a plain interactive Bash login. Run startx manually on a local TTY.
+# shellcheck disable=SC1090
+[[ ! -f ~/.bashrc ]] || . ~/.bashrc

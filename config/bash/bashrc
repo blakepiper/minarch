@@ -1,0 +1,10 @@
+# shellcheck shell=bash
+# Minarch: keep Bash close to stock.
+[[ $- == *i* ]] || return
+export PATH="$HOME/.local/bin:$PATH"
+export EDITOR=nvim
+export VISUAL=nvim
+if [[ -r /usr/share/bash-completion/bash_completion ]]; then
+  . /usr/share/bash-completion/bash_completion
+fi
+PS1='\u@\h:\w\$ '

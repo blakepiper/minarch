@@ -6,16 +6,17 @@
 - Inspected/imported: 2026-09-16
 - Local destination: `config/nvim/`
 - Local customization: `colors/seafoam.lua` palette adapted to oxwm defaults at
-  user request. All other imported files remain unchanged.
+  user request. All other imported files remain unchanged; `.minarch-source`
+  adds local provenance metadata.
 
 Blarchy is canonical. Sync by inspecting the current upstream tree, copying the
 complete `config/nvim/` tree, removing files upstream removed, recording the new
-commit here, and rechecking dependencies and smoke tests. Keep metadata outside
-the imported tree; preserve the documented palette customization when syncing.
+commit here, and rechecking dependencies and smoke tests. Update `.minarch-source` and these notes; preserve the documented palette
+customization when syncing.
 
 ## Dependencies
 
-`packages/neovim.txt` uses Arch package names. The imported config has no enabled
+`install/packages` includes the system-level editor dependencies. The imported config has no enabled
 LazyVim extras; its only plugin overrides are Seafoam and the Snacks project
 search directory. Dependencies come from its locked LazyVim defaults:
 
@@ -25,8 +26,8 @@ search directory. Dependencies come from its locked LazyVim defaults:
 | `ripgrep`, `fd`, `lazygit` | Snacks search/file pickers, grug-far search, todo-comments, Git UI |
 | `tree-sitter-cli`, `gcc`, `curl`, `tar` | Generate, compile, and download Treesitter parsers |
 | `curl`, `unzip`, `tar`, `gzip` | Mason tool downloads and archive extraction |
-| `stylua`, `shfmt`, `lua-language-server` | Default Lua/shell formatters and Lua LSP; upstream Mason management remains enabled |
-| `wl-clipboard`, `xclip` | System clipboard integration under Wayland/X11 respectively |
+| Mason-managed `stylua`, `shfmt`, `lua-language-server` | Default Lua/shell formatters and Lua LSP; installed by upstream Mason, not the OS manifest |
+| `xclip` | X11 system clipboard integration |
 
 The [locked Treesitter requirements](https://github.com/nvim-treesitter/nvim-treesitter/blob/5cb0114e6242625db56dd6440e945ed1ece10bc7/README.md#requirements)
 specify Neovim >= 0.12 and tree-sitter CLI >= 0.26.1. Use current Arch packages
@@ -36,7 +37,7 @@ See also [locked LazyVim defaults](https://github.com/LazyVim/LazyVim/tree/99970
 and [Mason requirements](https://github.com/mason-org/mason.nvim/blob/2a6940af80375532e5e9e7c1f2fc6319a1b7a69d/README.md#requirements).
 
 A Nerd Font and a true-color terminal are useful for the existing UI/icons;
-this import does not choose a terminal or change its font. Node, Python, Rust,
+Minarch supplies unpatched st and JetBrains Mono Nerd Font. Node, Python, Rust,
 and additional language servers are not required by the enabled config.
 Plugin downloads, Mason tools, and parser installation need network access on
 first use. The original lazy.nvim update checker remains enabled. No startup
@@ -44,7 +45,8 @@ code fetches Blarchy or depends on a `~/blarchy` checkout.
 
 ## Import validation
 
-Verified the complete imported tree against the upstream checkout byte for byte.
+The initial import matched upstream byte for byte. Current differences are
+limited to the requested palette adaptation and `.minarch-source` metadata.
 Installer checks passed for seeding, preservation, backup replacement, dangling
 symlinks, and XDG paths containing spaces. On Neovim 0.12.5, isolated fresh
 bootstrap passed with the tree-sitter CLI available; startup also passed after

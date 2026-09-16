@@ -1,0 +1,27 @@
+# Minarch: unpatched upstream st, only font and palette are configured locally.
+pkgname=st-minarch
+pkgver=0.9.3
+pkgrel=1
+pkgdesc='Simple X11 terminal with Minarch font and colors (unpatched)'
+arch=('x86_64')
+url='https://st.suckless.org/'
+license=('MIT')
+depends=('libx11' 'libxft' 'libxext' 'fontconfig' 'ncurses')
+provides=('st')
+conflicts=('st')
+source=("https://dl.suckless.org/st/st-$pkgver.tar.gz" 'config.h')
+sha256sums=('9ed9feabcded713d4ded38c8cebf36a3b08f0042ef7934a0e2b2409da56e649b' 'SKIP')
+
+prepare() {
+  cp "$srcdir/config.h" "$srcdir/st-$pkgver/config.h"
+}
+build() {
+  make -C "st-$pkgver" X11INC=/usr/include/X11 X11LIB=/usr/lib
+}
+package() {
+  # Arch ncurses already owns st and st-256color terminfo. Do not run upstream
+  # make install's unscoped tic command during a package build.
+  install -Dm755 "st-$pkgver/st" "$pkgdir/usr/bin/st"
+  install -Dm644 "st-$pkgver/st.1" "$pkgdir/usr/share/man/man1/st.1"
+  install -Dm644 "st-$pkgver/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

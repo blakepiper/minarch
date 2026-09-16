@@ -1,0 +1,71 @@
+# X11 session and on-demand X utilities
+xorg-server
+xorg-xinit
+xf86-input-libinput
+xorg-xauth
+xorg-xset
+xorg-xsetroot
+xorg-setxkbmap
+xorg-xrandr
+xorg-xprop
+xorg-xdpyinfo
+xdg-utils
+# Applications
+firefox
+firefox-ublock-origin
+dmenu
+mpv
+feh
+# Development and terminal workflow
+git
+openssh
+neovim
+tmux
+ripgrep
+fd
+fzf
+curl
+jq
+bat
+eza
+btop
+hyfetch
+lazygit
+less
+man-db
+unzip
+bash-completion
+base-devel
+shellcheck
+openai-codex
+# Neovim parser builds and Mason extraction (language tools stay with Mason)
+tree-sitter-cli
+tar
+gzip
+# Local st build dependencies
+libx11
+libxft
+libxext
+fontconfig
+# Screenshot, event-driven clipboard history, and secure suspend locking
+maim
+slop
+xclip
+clipmenu
+xsecurelock
+xss-lock
+# logind authorization for normal-user power actions; no GUI agent
+polkit
+# Audio and media keys
+pipewire
+wireplumber
+pipewire-pulse
+playerctl
+# Fonts
+ttf-jetbrains-mono-nerd
+noto-fonts
+noto-fonts-emoji
+# On-demand diagnostics
+mesa-utils
+pciutils
+psmisc

@@ -1,0 +1,5 @@
+__pycache__/
+config/st/src/
+config/st/pkg/
+config/st/*.pkg.tar.*
+config/st/st-*.tar.gz
