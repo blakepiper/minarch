@@ -10,17 +10,20 @@ need persistent processes. Reliability takes priority over speculative tuning.
 | --- | --- | --- |
 | `polkit.service` / polkitd | D-Bus activated as logind authorizes power actions; not explicitly enabled | Allows the normal active local user to use the requested power menu; no GUI agent |
 | `fstrim.timer` | Enabled system-wide only when lsblk reports discard support | Standard periodic SSD discard; no continuous worker |
-| `minarch-session.target` | Started explicitly by .xinitrc; not enabled at boot | Groups the two X-specific services |
+| `minarch-session.target` | Started explicitly by .xinitrc; not enabled at boot | Groups X-specific services |
 | `minarch-lock.service` / xss-lock | During X | Receives X/logind events, holds suspend delay inhibitor, launches XSecureLock only when needed |
 | `minarch-clipboard.service` / clipmenud + clipnotify | During X | Event-driven text clipboard history required for Super+V |
+| `minarch-hardware-hotplug.service` / udev monitor | During X | Restores the selected external keyboard map and HDMI mirror after reconnects |
+| `minarch-picom.service` / picom | During X except while locked | Window transparency; stopped before XSecureLock and restarted after unlock |
 | `pipewire.socket`, `pipewire-pulse.socket` | Started with the X session | On-demand native/Pulse audio endpoints |
 | `wireplumber.service` and PipeWire audio processes | User audio session | Device/session routing and reliable browser audio |
 
 The session target binds to the xss-lock service. When X disappears, xss-lock
-exits, the target stops, and PartOf stops the clipboard service and its children.
-Thus clipmenud cannot linger in its X-disconnection retry loop. A bounded startup check verifies its sleep inhibitor, then exits; no shell
-process polls to supervise the session. Audio may remain while the TTY user stays logged
-in; systemd manages the user manager's normal logout lifecycle. No user lingering
+exits, the target stops, and PartOf stops the clipboard, hotplug and Picom services.
+Thus clipmenud cannot linger in its X-disconnection retry loop. A bounded startup
+check verifies its sleep inhibitor, then exits. The hotplug service watches udev
+events; the CPU bar helper runs at five-second intervals. Audio may remain while
+the TTY user stays logged in; systemd manages the user manager's normal logout lifecycle. No user lingering
 is enabled. XSecureLock exists only while locked. Xclip may remain while owning
 copied content, as required by X11 selections.
 
@@ -32,19 +35,20 @@ Pre-existing services are reported, not disabled.
 
 ## What is deliberately absent
 
-No desktop environment, compositor, secondary bar, wallpaper process, tray
+No desktop environment, secondary bar, wallpaper process, tray
 applet, indexer, desktop search, notification daemon, portals, automounter,
 Polkit GUI agent, keyring daemon, Bluetooth, printing, idle screensaver framework,
 or background performance suite. The solid root background is set once. The
 built-in clock updates every 60 seconds; battery data is read every 30 seconds
-only when a battery exists. No external bar polling commands run. The RAM/CPU
-widgets, weather and other widgets are omitted.
+only when a battery exists. RAM and CPU blocks update every five seconds.
+Picom uses XRender with shadows, fading, blur and rounded corners disabled.
+Weather and other network widgets are omitted.
 
 No governors are forced and there are no sysctl, kernel-command-line, scheduler,
 filesystem, or latency "optimizations". CPU scaling uses the normal kernel
-stack. Hardware probing only selects CPU microcode, Mesa where appropriate,
-and brightnessctl when a backlight exists. No GPU driver collection or
-model-specific logic is installed.
+stack. Hardware probing selects CPU microcode, Mesa where appropriate,
+brightnessctl when a backlight exists, and the Intel media driver for the
+documented UHD 620 PCI ID. No broad GPU-driver collection is installed.
 
 ## Measuring fairly
 
@@ -82,8 +86,8 @@ user service because a systemd user service has no implicit TTY session. Normal
 logind suspend honors the delay inhibitor, including lid/external suspend
 requests. Automatic idle locking is disabled with `xset s off`.
 
-Test actual password unlocking, lid/system suspend and resume, multi-monitor
-hotplug, brightness permissions, audio keys, GPU acceleration, and your locale
+Test actual password unlocking with Picom active, lid/system suspend and resume,
+multi-monitor hotplug, brightness permissions, audio keys, GPU acceleration, and your locale
 on the installed machine. A virtual X server cannot establish those properties.
 Do not bypass inhibitors with forced suspend. X11's security limitations and
 locker failures due to another client's active grab are not solved by Minarch;

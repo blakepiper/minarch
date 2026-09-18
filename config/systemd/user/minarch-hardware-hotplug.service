@@ -1,0 +1,10 @@
+[Unit]
+Description=Configure external keyboard and mirrored monitor on hotplug
+PartOf=minarch-session.target
+After=minarch-lock.service
+
+[Service]
+Type=exec
+ExecStart=%h/.local/bin/minarch-hardware-hotplug
+Restart=on-failure
+RestartSec=1

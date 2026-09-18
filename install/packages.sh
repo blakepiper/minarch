@@ -12,11 +12,14 @@ install_packages() {
 build_package() (
   set -euo pipefail
   local name=$1 recipe=$2 upstream=${3:--} identity stamp work installed
+  local ble_contrib_rev=d2109203480a7dfe1dead5f5f8f9f15a9146c90d
   stamp="$STATE/builds/$name"
   mkdir -p "$STATE/builds"
   identity="$recipe:$upstream"
   if [[ $name == oxwm-git ]]; then
-    identity+=":$(sha256sum "$ROOT/config/oxwm-patches/0001-microphone-keysym.patch" | cut -d ' ' -f1)"
+    identity+=":$(sha256sum "$ROOT"/config/oxwm-patches/*.patch | sha256sum | cut -d ' ' -f1)"
+  elif [[ $name == blesh-git ]]; then
+    identity+=":$ble_contrib_rev"
   fi
   installed=$(pacman -Q "$name" 2>/dev/null || true)
   if [[ -n $installed && -f $stamp ]] && [[ $(cat "$stamp") == "$identity $installed" ]]; then
@@ -37,11 +40,20 @@ build_package() (
       sed -i "s|https://github.com/tonybanters/oxwm.git\"|https://github.com/tonybanters/oxwm.git#commit=$upstream\"|" "$work/PKGBUILD"
       grep -Fq "#commit=$upstream" "$work/PKGBUILD" || die 'OXWM source pin failed'
       cp "$ROOT/config/oxwm-patches/0001-microphone-keysym.patch" "$work/microphone.patch"
+      cp "$ROOT/config/oxwm-patches/0002-unique-mirrored-screens.patch" "$work/unique-screens.patch"
       cat >> "$work/PKGBUILD" <<'PREPARE'
 prepare() {
     patch -d "$srcdir/oxwm" -p1 < "$startdir/microphone.patch"
+    patch -d "$srcdir/oxwm" -p1 < "$startdir/unique-screens.patch"
 }
 PREPARE
+    elif [[ $name == blesh-git ]]; then
+      # Pin both VCS sources. The contrib revision is the submodule recorded by
+      # the reviewed ble.sh source commit.
+      cat >> "$work/PKGBUILD" <<SOURCES
+source[0]="git+https://github.com/akinomyoga/ble.sh#commit=$upstream"
+source[1]="git+https://github.com/akinomyoga/blesh-contrib#commit=$ble_contrib_rev"
+SOURCES
     fi
   fi
   cd "$work"
@@ -64,7 +76,8 @@ install_local_packages() {
     log "Reviewed AUR build: $name"
     build_package "$name" "$recipe" "$upstream"
   done
-  identity=$(sha256sum "$ROOT/config/st/PKGBUILD" "$ROOT/config/st/config.h" | sha256sum | cut -d ' ' -f1)
-  log 'Local stock st build'
+  identity=$(sha256sum "$ROOT/config/st/PKGBUILD" "$ROOT/config/st/config.h" \
+    "$ROOT/config/st/0001-scrollback-and-urls.patch" | sha256sum | cut -d ' ' -f1)
+  log 'Local patched st build'
   build_package st-minarch "$identity"
 }

@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -u
+
+# XSecureLock must own the Composite Overlay Window while the screen is locked.
+# Only stop the compositor managed for this Minarch session.
+picom_was_active=false
+if systemctl --user is-active --quiet minarch-picom.service; then
+  picom_was_active=true
+  if ! systemctl --user stop minarch-picom.service; then
+    echo 'Could not stop Minarch Picom before locking.' >&2
+    exit 1
+  fi
+fi
+
+# Called by EXIT trap after XSecureLock returns.
+# shellcheck disable=SC2329
+restore_picom() {
+  if "$picom_was_active" && systemctl --user is-active --quiet minarch-session.target; then
+    systemctl --user start minarch-picom.service ||
+      echo 'Could not restart Minarch Picom after unlocking.' >&2
+  fi
+}
+trap restore_picom EXIT
+
+exec_status=0
+/usr/bin/xsecurelock "$@" || exec_status=$?
+exit "$exec_status"

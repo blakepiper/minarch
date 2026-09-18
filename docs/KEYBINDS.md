@@ -27,7 +27,8 @@ geometry is emulated. OXWM was inspected at `fc4ada9ac4ee8e34ace203290a2b14d10e4
 | Super+Minus / Equal | Decrease/increase master area by 5 percentage points (within native limits) |
 | Super+Shift+Minus / Equal | Decrease/increase master window count |
 | Super+N | Cycle native layouts |
-| Super+Shift+R | Native config hot reload |
+| Super+R | Select dwindle layout |
+| Super+C | Select classic master/stack tiling |
 | Super+Shift+Q | Native immediate quit; the confirmed control-menu logout invokes this binding |
 | Super+Shift+S | Drag-select, save PNG, copy exact saved PNG |
 | Print | Full-screen PNG, save + clipboard |
@@ -45,14 +46,15 @@ geometry is emulated. OXWM was inspected at `fc4ada9ac4ee8e34ace203290a2b14d10e4
 
 The arrows express **order**, not geometric direction or monitor topology.
 Stack operations skip windows according to OXWM's native visibility/floating
-rules. The default is tiling. The inspected source cycles tiling, monocle,
-floating, scrolling, grid, and dwindle; it does not currently expose the older
+rules. The default is dwindle on every workspace. The inspected source cycles
+tiling, monocle, floating, scrolling, grid, and dwindle; it does not expose the older
 tabbed layout. Minarch does not emulate it. Scrolling is merely an optional
-upstream layout in the cycle; the initial tiling layout has no animation. There
-is no current Lua animation toggle, and no compositor is installed.
+upstream layout in the cycle. There is no current Lua animation toggle; Picom
+provides window transparency only. Binding changes require editing the Lua
+config and restarting OXWM from a shell or a new X session.
 
 OXWM's internal `set_master_factor` argument is scaled by 1/1000, so Minarch uses
-±50 for 5 percentage points. Parsed-binding tests cover all 65 bindings and
+±50 for 5 percentage points. Parsed-binding tests cover all 66 bindings and
 ensure no duplicate key/modifier combinations.
 
 `dev` is a project command, not a global keybinding. Super+Shift+Enter is unbound.

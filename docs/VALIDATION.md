@@ -1,11 +1,35 @@
 # Validation record
 
+## 2026-09-18 repository sync
+
+* `test/check.sh` passed shell syntax, shellcheck, 14 isolated workstation tests,
+  and installed OXWM configuration validation.
+* `test/validate-oxwm.sh` built the pinned source with both patches, ran its
+  upstream and Minarch parser tests, and validated the 66-binding Lua config.
+* `makepkg --cleanbuild --clean --noconfirm` built `st-minarch 0.9.3-3` from the
+  upstream SHA-256-checked tarball plus the repo patch and config.
+* The pinned `blesh-git` recipe and both source commits passed `makepkg
+  --verifysource` and built version `0.4.0_devel4.r2350.d81fd54f-1`.
+* `systemd-analyze --user verify` accepted the user target and services.
+  Fastfetch loaded its new config. Xfe launched in an isolated Xvfb session
+  with the sanitized dark theme config and retained its dark color keys.
+* `test/x11.py` passed in an isolated Xvfb server extracted to a temporary
+  directory. Real clipmenu and xclip preserved a PNG larger than 1 MiB while
+  the private text probe was active; screenshots and OXWM layout/quit checks
+  also passed.
+
+No installer was run over the active workstation and no real lock/suspend was
+triggered. After applying the new config, confirm Picom stops while locked and
+resumes after unlocking, and verify the external device reconnect behavior.
+
+## 2026-09-16 baseline
+
 Implementation reviewed and tested on 2026-09-16. No full installation was run
 over the existing desktop. Builds, configuration copies and nested displays
 used temporary directories. No real lock, suspend, reboot, poweroff or package
 installation was performed on the host.
 
-## Passed
+### Passed
 
 * `test/check.sh`: shellcheck and Bash syntax checks for installer/modules,
   helpers, session/Bash files, tests, and local st PKGBUILD. PKGBUILD metadata
@@ -53,7 +77,7 @@ Source/parser testing found the missing OXWM mic keysym and the embedded Lua
 popen limitation. Session review added explicit logind session-ID forwarding
 and a bounded check for the lock service's sleep inhibitor before launching OXWM.
 
-## Installed-workstation smoke test
+### Installed-workstation smoke test
 
 `test/smoke.sh` was run using an isolated seeded home and the real available or
 locally built/extracted tools. It correctly reported three missing host tools:
@@ -67,7 +91,7 @@ Run `test/smoke.sh` again **after full installation**. It should pass on that
 workstation, apart from explicitly reported checks requiring a live X session.
 No tests are replaced with fake executable-presence claims.
 
-## Still requires an installed physical workstation
+### Still requires an installed physical workstation
 
 * Full pacman/AUR install transaction on a fresh minimal Arch system.
 * First startx from a real TTY, local logind session, user audio services, and

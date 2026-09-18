@@ -22,8 +22,10 @@ for battery in /sys/class/power_supply/*; do
   fi
 done
 xsetroot -solid '#1a1b26'
-setxkbmap us
-xset r rate 250 45
+xset r rate 200 50
+# Set the mirrored monitor before OXWM sees Xinerama geometry. Reapply the
+# external keyboard map after Xorg has created both keyboard interfaces.
+minarch-hardware-hotplug --once
 # No idle locking or automatic display blanking. Manual DPMS still works.
 xset s off
 xset +dpms

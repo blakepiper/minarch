@@ -45,7 +45,7 @@ class AurManifestInput(Sandbox):
             "# reviewed recipes\n\nfirst-package recipe-a source-a\n"
             "second-package recipe-b - # inline comment\n")
         (repo / "config/st").mkdir(parents=True)
-        for name in ["PKGBUILD", "config.h"]:
+        for name in ["PKGBUILD", "config.h", "0001-scrollback-and-urls.patch"]:
             (repo / "config/st" / name).write_text("test fixture\n")
         calls = self.base / "calls"
         self.env["TEST_CALLS"] = str(calls)
@@ -112,6 +112,12 @@ class ConfigSafety(Sandbox):
         run([str(ROOT / "install.sh"), "--config-only"], env=self.env)
         self.assertTrue((self.home / ".xinitrc").is_file())
         self.assertTrue((self.home / ".local/bin/dev").stat().st_mode & 0o111)
+        self.assertTrue((self.home / ".local/bin/minarch-hardware-hotplug").stat().st_mode & 0o111)
+        self.assertTrue((self.home / ".local/bin/xsecurelock-without-picom").stat().st_mode & 0o111)
+        self.assertTrue((self.home / ".local/lib/clipmenu-text-probe/xsel").stat().st_mode & 0o111)
+        self.assertTrue((self.home / ".config/picom/picom.conf").is_file())
+        self.assertTrue((self.home / ".config/xfe/xferc").is_file())
+        self.assertTrue((self.home / ".config/fastfetch/config.jsonc").is_file())
         self.assertEqual((self.home / ".config/tmux/tmux.conf").read_text(), "set -g mouse on\n")
         run(["diff", "-r", str(ROOT / "config/nvim"), str(self.home / ".config/nvim")])
         self.assertFalse(list(self.home.rglob("*.backup.*")))
@@ -158,7 +164,7 @@ class DevWorkspace(Sandbox):
             self.skipTest("tmux is not installed")
         self.socket = "minarch-test-" + self.base.name
         self.env.update(TEST_TMUX=self.real_tmux, TEST_SOCKET=self.socket,
-                        TEST_ATTACH=str(self.base / "attach"), TEST_HYFETCH=str(self.base / "hyfetch"),
+                        TEST_ATTACH=str(self.base / "attach"), TEST_FASTFETCH=str(self.base / "fastfetch"),
                         COLUMNS="160", LINES="48")
         self.command("tmux", '''case $1 in
   attach-session|switch-client) printf '%s\\n' "$*" >> "$TEST_ATTACH"; exit 0 ;;
@@ -166,7 +172,7 @@ esac
 exec "$TEST_TMUX" -L "$TEST_SOCKET" -f /dev/null "$@"
 ''')
         self.command("nvim", "exec sleep 120\n")
-        self.command("hyfetch", 'pwd -P >> "$TEST_HYFETCH"\n')
+        self.command("fastfetch", 'pwd -P >> "$TEST_FASTFETCH"\n')
         self.addCleanup(lambda: subprocess.run([self.real_tmux, "-L", self.socket, "kill-server"], capture_output=True))
 
     def tmux(self, *args):
@@ -252,6 +258,11 @@ class HardwareSelection(Sandbox):
         self.assertIn("mesa", run(args, env=self.env).stdout)
         cpuinfo.write_text("vendor_id : GenuineIntel\n")
         self.assertIn("intel-ucode", run(args, env=self.env).stdout)
+        (gpu / "vendor").write_text("0x8086\n")
+        (gpu / "device").write_text("0x3ea0\n")
+        self.assertTrue({"intel-media-driver", "libva-utils"} <= set(run(args, env=self.env).stdout.splitlines()))
+        (gpu / "device").write_text("0x1234\n")
+        self.assertNotIn("intel-media-driver", run(args, env=self.env).stdout)
 
 
 class SessionStartup(Sandbox):
@@ -278,11 +289,14 @@ class RepositoryPolicy(unittest.TestCase):
     def test_manifest_and_firefox(self):
         packages = {line.split("#")[0].strip() for line in (ROOT / "install/packages").read_text().splitlines()}
         self.assertTrue({"openai-codex", "firefox-ublock-origin", "xsecurelock", "xss-lock"} <= packages)
-        banned = {"bluez", "blueman", "cups", "avahi", "networkmanager", "wl-clipboard", "picom", "sddm", "gnome-keyring"}
+        banned = {"bluez", "blueman", "cups", "avahi", "networkmanager", "wl-clipboard", "sddm", "gnome-keyring"}
         self.assertFalse(banned & packages)
+        self.assertTrue({"picom", "fastfetch", "xorg-xkbcomp"} <= packages)
         policies = json.loads((ROOT / "etc/firefox/policies/policies.json").read_text())["policies"]
         self.assertEqual(policies["AIControls"]["Default"], {"Value": "blocked", "Locked": True})
-        self.assertEqual(set(policies), {"FirefoxHome", "FirefoxSuggest", "AIControls"})
+        self.assertEqual(set(policies), {"FirefoxHome", "FirefoxSuggest", "AIControls", "EnableTrackingProtection", "Preferences"})
+        self.assertEqual(policies["EnableTrackingProtection"]["Category"], "strict")
+        self.assertTrue(policies["Preferences"]["privacy.globalprivacycontrol.enabled"]["Value"])
 
 
 if __name__ == "__main__":

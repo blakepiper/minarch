@@ -8,6 +8,13 @@
     "FirefoxSuggest": {
       "SponsoredSuggestions": false
     },
+    "EnableTrackingProtection": {
+      "Value": true,
+      "Category": "strict"
+    },
+    "Preferences": {
+      "privacy.globalprivacycontrol.enabled": { "Value": true, "Status": "user" }
+    },
     "AIControls": {
       "Default": { "Value": "blocked", "Locked": true }
     }

@@ -9,6 +9,7 @@ git -C "$work" init -q
 git -C "$work" fetch --quiet --depth 1 https://github.com/tonybanters/oxwm.git "$revision"
 git -C "$work" checkout --quiet --detach FETCH_HEAD
 patch -d "$work" -p1 < "$root/config/oxwm-patches/0001-microphone-keysym.patch"
+patch -d "$work" -p1 < "$root/config/oxwm-patches/0002-unique-mirrored-screens.patch"
 cp -a "$root/config/oxwm" "$work/minarch-config"
 cat "$root/test/oxwm-config.zig" >> "$work/tests/lua_config_tests.zig"
 cd "$work"

@@ -6,6 +6,7 @@ After=minarch-lock.service
 [Service]
 Type=exec
 Environment=CM_SELECTIONS=clipboard CM_MAX_CLIPS=100 CM_OWN_CLIPBOARD=0 CM_LAUNCHER=dmenu
+Environment=PATH=%h/.local/lib/clipmenu-text-probe:%h/.local/bin:/usr/bin
 UMask=0077
 ExecStart=/usr/bin/clipmenud
 Restart=no

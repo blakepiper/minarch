@@ -1,18 +1,19 @@
-# Minarch: unpatched upstream st, only font and palette are configured locally.
+# Minarch: pinned upstream st with locally reviewed scrollback and URL changes.
 pkgname=st-minarch
 pkgver=0.9.3
-pkgrel=1
-pkgdesc='Simple X11 terminal with Minarch font and colors (unpatched)'
+pkgrel=3
+pkgdesc='Simple X11 terminal with Minarch colors, scrollback, and clickable URLs'
 arch=('x86_64')
 url='https://st.suckless.org/'
 license=('MIT')
 depends=('libx11' 'libxft' 'libxext' 'fontconfig' 'ncurses')
 provides=('st')
 conflicts=('st')
-source=("https://dl.suckless.org/st/st-$pkgver.tar.gz" 'config.h')
-sha256sums=('9ed9feabcded713d4ded38c8cebf36a3b08f0042ef7934a0e2b2409da56e649b' 'SKIP')
+source=("https://dl.suckless.org/st/st-$pkgver.tar.gz" 'config.h' '0001-scrollback-and-urls.patch')
+sha256sums=('9ed9feabcded713d4ded38c8cebf36a3b08f0042ef7934a0e2b2409da56e649b' 'SKIP' 'SKIP')
 
 prepare() {
+  patch -d "$srcdir/st-$pkgver" -p1 < "$srcdir/0001-scrollback-and-urls.patch"
   cp "$srcdir/config.h" "$srcdir/st-$pkgver/config.h"
 }
 build() {

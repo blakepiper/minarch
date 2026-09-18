@@ -4,6 +4,6 @@ PartOf=minarch-session.target
 
 [Service]
 Type=exec
-ExecStart=/usr/bin/xss-lock --transfer-sleep-lock --session ${XDG_SESSION_ID} -- /usr/bin/xsecurelock
+ExecStart=/usr/bin/xss-lock --transfer-sleep-lock --session ${XDG_SESSION_ID} -- %h/.local/bin/xsecurelock-without-picom
 Environment=XSECURELOCK_SAVER=saver_blank
 Restart=no

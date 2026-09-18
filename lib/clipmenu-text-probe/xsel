@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+# clipmenud is a text history daemon.  Do not ask an image-only X11
+# selection for text: xclip 0.13 can become unresponsive when a large
+# image owner is probed with a text target.
+set -u
+
+selection=primary
+output_requested=0
+
+for arg in "$@"; do
+  case "$arg" in
+    -o|--output) output_requested=1 ;;
+    -p|--primary) selection=primary ;;
+    -s|--secondary) selection=secondary ;;
+    -b|--clipboard) selection=clipboard ;;
+  esac
+done
+
+if (( output_requested )); then
+  targets=$(/usr/bin/timeout 1s /usr/bin/xclip \
+    -selection "$selection" -out -target TARGETS 2>/dev/null) || exit 0
+
+  has_text_target=1
+  while IFS= read -r target; do
+    case "$target" in
+      UTF8_STRING|STRING|TEXT|COMPOUND_TEXT|text/plain|text/plain\;charset=utf-8|text/plain\;charset=UTF-8)
+        has_text_target=0
+        break
+        ;;
+    esac
+  done <<< "$targets"
+
+  (( has_text_target == 0 )) || exit 0
+fi
+
+exec /usr/bin/xsel "$@"

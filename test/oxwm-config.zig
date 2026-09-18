@@ -6,7 +6,7 @@ test "Minarch parses every binding including microphone mute" {
     try testing.expect(lua.init(&cfg));
     defer lua.deinit();
     try testing.expect(lua.loadFile("minarch-config/config.lua"));
-    try testing.expectEqual(@as(usize, 65), cfg.keybinds.items.len);
+    try testing.expectEqual(@as(usize, 66), cfg.keybinds.items.len);
     const Expected = struct { key: u64, mask: u32, action: lua.config_mod.Action };
     const expected = [_]Expected{
         .{ .key = 0xff0d, .mask = 64, .action = .spawn_terminal },

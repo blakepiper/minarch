@@ -1,4 +1,4 @@
-# Upstream verification (2026-09-16)
+# Upstream verification (2026-09-16; updated 2026-09-18)
 
 ## OXWM
 
@@ -10,10 +10,12 @@ upstream `resources/PKGBUILD` is not used. Both the recipe and source are pinned
 in Minarch's manifest. `oxwm --validate <path>` and `zig build test` exist.
 
 Every Lua function used by Minarch exists in `src/config/lua.zig`; actual parser
-tests verify all 65 bindings, actions, directions, tag indices and uniqueness.
-The built-in keysym table omitted `XF86AudioMicMute`; the one-line patch in
-`config/oxwm-patches` adds the standard X11 keysym `0x1008ffb2`. This is the only
-local OXWM source change. Native focus/move-stack actions carry a ±1 argument;
+tests verify all 66 bindings, actions, directions, tag indices and uniqueness.
+The built-in keysym table omitted `XF86AudioMicMute`; the first patch in
+`config/oxwm-patches` adds the standard X11 keysym `0x1008ffb2`. The second
+patch deduplicates identical Xinerama rectangles during monitor creation and
+updates so mirrored displays do not create overlaid bars. Native focus/move-stack
+actions carry a ±1 argument;
 master resizing scales its integer by 1/1000. The current embedded Lua lacks
 io.popen, so sysfs battery discovery is done once by the X session, with its
 actual battery name passed to Lua. There is no external quit IPC; a confirmed
@@ -31,7 +33,11 @@ package records:
 * [st release](https://dl.suckless.org/st/st-0.9.3.tar.gz): 0.9.3,
   SHA-256 `9ed9feabcded713d4ded38c8cebf36a3b08f0042ef7934a0e2b2409da56e649b`.
   Its [upstream configuration](https://git.suckless.org/st/file/config.def.h.html)
-  already provides selection and clipboard shortcuts. No patches are needed.
+  provides selection and clipboard shortcuts. Minarch applies its own pinned
+  scrollback and clickable-URL patch to the verified tarball.
+* `blesh-git`: reviewed AUR recipe `024c8a67b3e691f8e9d829a96277271bba90f52c`;
+  ble.sh source `d81fd54feb0d996fdff20dca27eaf0201f7015cc` and its recorded
+  contrib submodule `d2109203480a7dfe1dead5f5f8f9f15a9146c90d` are pinned.
 * Official packages provide slock, xsecurelock, xss-lock, clipmenu, feh, and
   firefox-ublock-origin. `fox` and `intltool` required by Xfe are official packages.
 
@@ -64,6 +70,14 @@ the old policy-templates site now redirects readers:
 The policy is also checked against the installed Firefox policy schema during
 implementation. System-wide policy goes to `/etc/firefox/policies/policies.json`;
 see [Mozilla's policy placement documentation](https://mozilla.github.io/policy-templates/).
+
+The 2026-09-18 update uses Mozilla's [EnableTrackingProtection policy](https://firefox-admin-docs.mozilla.org/reference/policies/enabletrackingprotection/)
+with `Category: strict` and the supported `privacy.globalprivacycontrol.enabled`
+entry in the [Preferences policy](https://firefox-admin-docs.mozilla.org/reference/policies/preferences/).
+The active profile's additional GPC functionality/private-browsing preferences
+are not in Mozilla's documented policy allowlist; Minarch does not force them
+through an unsupported policy key. Firefox IP Protection remains an account and
+browser setting rather than a machine-wide VPN configuration.
 Arch's `firefox-ublock-origin` package provides extension maintenance.
 
 ## Clipboard, lock, input and audio

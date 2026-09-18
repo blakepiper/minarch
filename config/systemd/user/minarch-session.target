@@ -2,4 +2,4 @@
 Description=Minarch X11 session services
 BindsTo=minarch-lock.service
 After=minarch-lock.service
-Wants=minarch-clipboard.service pipewire.socket pipewire-pulse.socket wireplumber.service
+Wants=minarch-clipboard.service minarch-hardware-hotplug.service minarch-picom.service pipewire.socket pipewire-pulse.socket wireplumber.service

@@ -2,7 +2,7 @@
 set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
 command -v shellcheck >/dev/null || { echo 'Install shellcheck to run repository checks.' >&2; exit 1; }
-mapfile -t scripts < <(find install bin test tests scripts -type f \( -name '*.sh' -o -path 'bin/*' \) -print)
+mapfile -t scripts < <(find install bin lib test tests scripts -type f \( -name '*.sh' -o -path 'bin/*' -o -path 'lib/clipmenu-text-probe/xsel' \) -print)
 scripts+=(install.sh config/session/xinitrc config/bash/bashrc config/bash/bash_profile)
 for script in "${scripts[@]}"; do bash -n "$script"; done
 shellcheck -x "${scripts[@]}"

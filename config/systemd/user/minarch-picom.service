@@ -1,0 +1,9 @@
+[Unit]
+Description=Picom compositor for the Minarch X11 session
+PartOf=minarch-session.target
+After=minarch-lock.service
+
+[Service]
+Type=exec
+ExecStart=/usr/bin/picom --config %h/.config/picom/picom.conf
+Restart=no

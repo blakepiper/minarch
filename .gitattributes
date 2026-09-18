@@ -1,0 +1,2 @@
+# Patch files contain diff markers before their source indentation.
+*.patch -whitespace

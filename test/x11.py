@@ -4,9 +4,11 @@ import os
 from pathlib import Path
 import shutil
 import signal
+import struct
 import subprocess
 import tempfile
 import time
+import zlib
 
 ROOT = Path(__file__).resolve().parents[1]
 required = ["Xvfb", "oxwm", "st", "xdotool", "maim", "slop", "xclip", "clipmenud", "clipmenu"]
@@ -29,7 +31,7 @@ with tempfile.TemporaryDirectory(prefix="minarch-x11-") as temp:
         (base / "runtime").mkdir(mode=0o700)
         env = dict(os.environ, DISPLAY=":" + display, HOME=temp, XDG_CONFIG_HOME=temp + "/config",
                    XDG_RUNTIME_DIR=temp + "/runtime", CM_DIR=temp + "/clipboard", CM_SELECTIONS="clipboard",
-                   CM_OWN_CLIPBOARD="0", CM_MAX_CLIPS="100", PATH=str(commands) + ":" + str(ROOT / "bin") + ":" + os.environ["PATH"])
+                   CM_OWN_CLIPBOARD="0", CM_MAX_CLIPS="100", PATH=str(commands) + ":" + str(ROOT / "lib/clipmenu-text-probe") + ":" + str(ROOT / "bin") + ":" + os.environ["PATH"])
         env.pop("MINARCH_BATTERY", None)
 
         def run(args, **kwargs):
@@ -93,14 +95,32 @@ with tempfile.TemporaryDirectory(prefix="minarch-x11-") as temp:
         assert run(["xclip", "-selection", "clipboard", "-o"]).stdout == restored
         print("PASS: clipmenu restores selected text; cancelling keeps clipboard")
 
-        # Native hot reload and the menu's exact quit bridge on the nested WM.
-        run(["xdotool", "key", "--clearmodifiers", "super+shift+r"])
+        # Reproduce the old >1 MiB image/xsel failure with the text watcher
+        # active. Random pixels keep the PNG larger than xclip's trouble size.
+        def chunk(kind, payload):
+            return struct.pack(">I", len(payload)) + kind + payload + struct.pack(">I", zlib.crc32(kind + payload))
+
+        width, height = 800, 600
+        pixels = b"".join(b"\0" + os.urandom(width * 3) for _ in range(height))
+        large_png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
+        large_png += chunk(b"IDAT", zlib.compress(pixels, 1)) + chunk(b"IEND", b"")
+        assert len(large_png) > 1_000_000
+        png_path = base / "large.png"
+        png_path.write_bytes(large_png)
+        run(["xclip", "-selection", "clipboard", "-t", "image/png", "-i", str(png_path)])
+        time.sleep(.5)
+        assert clipboard() == large_png, "Text history interrupted the large image owner"
+        print("PASS: image-only clipboard survives clipmenu's text probe")
+
+        # Layout bindings and the menu's exact quit bridge on the nested WM.
+        run(["xdotool", "key", "--clearmodifiers", "super+c"])
+        run(["xdotool", "key", "--clearmodifiers", "super+r"])
         time.sleep(.2)
         assert wm.poll() is None
         run(["xdotool", "key", "--clearmodifiers", "super+shift+q"])
         wm.wait(timeout=5)
         assert wm.returncode == 0
-        print("PASS: OXWM starts, manages st, hot-reloads, and quits through its native action")
+        print("PASS: OXWM starts, manages st, switches layouts, and quits through its native action")
     except Exception:
         log.flush()
         log.seek(0)

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 hardware_packages() {
   local sys_root=${1:-/sys} cpuinfo=${2:-/proc/cpuinfo}
-  local vendor device class gpu_vendor has_gpu=false
+  local vendor device class gpu_vendor gpu_device has_gpu=false
   vendor=$(awk -F ': ' '/vendor_id/ {print $2; exit}' "$cpuinfo")
   case $vendor in
     GenuineIntel) echo intel-ucode ;;
@@ -13,7 +13,17 @@ hardware_packages() {
     [[ $class == 0x03* ]] || continue
     read -r gpu_vendor < "$device/vendor"
     case $gpu_vendor in
-      0x8086|0x1002) has_gpu=true ;;
+      0x8086)
+        has_gpu=true
+        gpu_device=''
+        [[ ! -r $device/device ]] || read -r gpu_device < "$device/device"
+        # Whiskey Lake UHD 620 on the documented workstation. Other Intel
+        # generations need their own VA-API driver choice.
+        if [[ $gpu_device == 0x3ea0 ]]; then
+          echo intel-media-driver
+          echo libva-utils
+        fi ;;
+      0x1002) has_gpu=true ;;
       0x10de)
         # Preserve an existing proprietary userspace driver. Otherwise use the
         # in-kernel nouveau driver with Mesa; do not guess GPU generations.

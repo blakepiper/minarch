@@ -6,6 +6,7 @@ xorg-xauth
 xorg-xset
 xorg-xsetroot
 xorg-setxkbmap
+xorg-xkbcomp
 xorg-xrandr
 xorg-xprop
 xorg-xdpyinfo
@@ -29,7 +30,7 @@ jq
 bat
 eza
 btop
-hyfetch
+fastfetch
 lazygit
 less
 man-db
@@ -54,6 +55,7 @@ xclip
 clipmenu
 xsecurelock
 xss-lock
+picom
 # logind authorization for normal-user power actions; no GUI agent
 polkit
 # Audio and media keys

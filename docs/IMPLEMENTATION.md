@@ -1,4 +1,8 @@
-# Minarch v1 implementation plan
+# Minarch v1 initial implementation plan (2026-09-16)
+
+This records the original baseline. The 2026-09-18 workstation sync added the
+patched OXWM and st builds, Picom with lock integration, hotplug handling, and
+other current settings documented in the README and validation record.
 
 1. Verify current OXWM Lua APIs/validator, Arch/AUR packaging, Firefox policies,
    Codex installation, X11 clipboard/locking, and upstream st. Record revisions.

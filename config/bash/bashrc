@@ -1,6 +1,12 @@
 # shellcheck shell=bash
 # Minarch: keep Bash close to stock.
 [[ $- == *i* ]] || return
+# Attach ble.sh after the prompt is configured, when the AUR package exists.
+if [[ -r /usr/share/blesh/ble.sh ]]; then
+  # ble.sh uses dynamic Bash syntax that shellcheck cannot parse as a source.
+  # shellcheck disable=SC1094
+  source -- /usr/share/blesh/ble.sh --attach=none
+fi
 export PATH="$HOME/.local/bin:$PATH"
 export EDITOR=nvim
 export VISUAL=nvim
@@ -8,3 +14,4 @@ if [[ -r /usr/share/bash-completion/bash_completion ]]; then
   . /usr/share/bash-completion/bash_completion
 fi
 PS1='\u@\h:\w\$ '
+[[ ! ${BLE_VERSION-} ]] || ble-attach

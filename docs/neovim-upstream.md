@@ -37,7 +37,7 @@ See also [locked LazyVim defaults](https://github.com/LazyVim/LazyVim/tree/99970
 and [Mason requirements](https://github.com/mason-org/mason.nvim/blob/2a6940af80375532e5e9e7c1f2fc6319a1b7a69d/README.md#requirements).
 
 A Nerd Font and a true-color terminal are useful for the existing UI/icons;
-Minarch supplies unpatched st and JetBrains Mono Nerd Font. Node, Python, Rust,
+Minarch supplies patched st and JetBrains Mono Nerd Font. Node, Python, Rust,
 and additional language servers are not required by the enabled config.
 Plugin downloads, Mason tools, and parser installation need network access on
 first use. The original lazy.nvim update checker remains enabled. No startup
