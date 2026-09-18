@@ -1,7 +1,7 @@
 -- Modified for Minarch: oxwm default palette (2026-09-16).
 -- Source: tonybanters/oxwm templates/config.lua at
 -- fc4ada9ac4ee8e34ace203290a2b14d10e4671cc.
--- Retains Blarchy's Seafoam highlight mappings and colorscheme name.
+-- Maintains Minarch's Seafoam highlight mappings and colorscheme name.
 -- Dim surfaces, selection, comments, and yellow supplement oxwm's UI palette.
 
 local c = {

@@ -4,7 +4,7 @@
 
 A small, keyboard-first **post-install configuration for Arch Linux x86_64**.
 Xorg runs OXWM, its built-in bar, patched st, and Picom. tmux supplies panes;
-the existing Blarchy Neovim configuration and Codex supply the primary
+the Minarch Neovim configuration and Codex supply the primary
 development workflow. No desktop environment, graphical login manager, or
 background optimization suite.
 
@@ -178,13 +178,12 @@ applications keep their own mouse scrolling. Ctrl+Shift+C/V copy/paste,
 middle-click pastes PRIMARY, and Shift lets you select text when an application
 such as tmux handles the mouse. tmux also has its own scrollback.
 
-The complete Blarchy Neovim tree is committed in `config/nvim`, with provenance
-in `.minarch-source` and [upstream notes](docs/neovim-upstream.md). The only editor
-customization is the previously requested oxwm-like palette. LazyVim/lazy.nvim,
-keybindings, plugin specifications and lockfile are retained. No `~/blarchy`
-checkout is needed. First launch downloads plugins, parsers, and Mason tools.
-To restore exact imported plugin versions after bootstrap/updates, close Neovim,
-copy the repository's `lazy-lock.json` back to the installed config, and run
+Minarch owns and maintains its Neovim configuration in `config/nvim`; see the
+[editor notes](docs/NEOVIM.md). It uses LazyVim/lazy.nvim with Minarch's Seafoam
+palette, keybindings, plugin specifications, and lockfile. First launch downloads
+plugins, parsers, and Mason tools. To restore the locked plugin versions after
+bootstrap/updates, close Neovim, copy the repository's `lazy-lock.json` back to
+the installed config, and run
 `nvim --headless '+Lazy! restore' '+qa!'`.
 
 Codex comes from Arch **`openai-codex`**, now available in the official extra

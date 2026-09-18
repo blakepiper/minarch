@@ -1,4 +1,0 @@
-repository=https://github.com/blakepiper/blarchy
-path=config/nvim
-commit=e295d5c4aa5f19bad15598262fc51df51711238d
-customization=colors/seafoam.lua uses oxwm palette at user request

@@ -6,7 +6,7 @@ return {
         sources = {
           projects = {
             -- No ~/dev or ~/projects here, so scan home itself.
-            -- Finds repo roots (blarchy, joyce, ...) below ~.
+            -- Finds repository roots below ~.
             dev = { "~" },
           },
         },

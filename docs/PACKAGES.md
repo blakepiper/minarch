@@ -74,7 +74,7 @@ AUR build dependencies (such as Zig, FOX, intltool and X libraries) are resolved
 by makepkg/pacman. They do not start services. Package inspection may show Lua,
 Python, Wayland protocol libraries, or other transitive libraries; none causes a
 Wayland session or a blanket programming-language tooling install. Mason handles
-Lua language server and editor-specific formatters using the imported config.
+Lua language server and editor-specific formatters using Minarch's Neovim config.
 
 `ncurses` supplies st/st-256color terminfo. The local st package does not run
 upstream's unscoped `tic` install command or overwrite ncurses-owned terminfo.

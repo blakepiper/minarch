@@ -6,8 +6,8 @@ other current settings documented in the README and validation record.
 
 1. Verify current OXWM Lua APIs/validator, Arch/AUR packaging, Firefox policies,
    Codex installation, X11 clipboard/locking, and upstream st. Record revisions.
-2. Preserve the complete Blarchy import (current main still e295d5c), including
-   the user-requested oxwm palette adaptation. No other editor redesign.
+2. Keep the existing Neovim behavior, including the user-requested oxwm palette
+   adaptation. No other editor redesign.
 3. Separate official packages, pinned AUR recipes, hardware detection, safe file
    installation, system setup, and user setup. Preserve existing configs by
    default; explicit replacement backs up once per actual change.

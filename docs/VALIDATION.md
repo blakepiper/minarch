@@ -52,13 +52,12 @@ installation was performed on the host.
 * Local `st-minarch` PKGBUILD built successfully with makepkg as a normal user,
   producing `st-minarch-0.9.3-1-x86_64.pkg.tar.zst`. Archive inspection confirmed
   the binary, manual and license, without conflicting ncurses terminfo files.
-* Neovim 0.12.5 starts headlessly with the imported LazyVim config and oxwm-like
+* Neovim 0.12.5 starts headlessly with the Minarch LazyVim config and oxwm-like
   Seafoam palette. The initial fresh bootstrap was also checked with tree-sitter
   CLI present. Every restored plugin revision matched the original lockfile;
   intentionally injected Lua errors were rejected by the smoke test.
-* The Blarchy tree was rechecked against current main
-  `e295d5c4aa5f19bad15598262fc51df51711238d`; all files match except the explicitly
-  requested palette customization and added `.minarch-source` metadata.
+* The Neovim configuration was checked against its baseline snapshot; the
+  requested palette customization was the only editor change at that stage.
 * Every official manifest package resolves in current Arch sync metadata. AUR
   recipe revisions, required official build dependencies, and upstream source
   pins were inspected. `makepkg --verifysource` also fetched Xfe 2.1.11 and

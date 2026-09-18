@@ -9,10 +9,10 @@ case ${1:-} in
 esac
 config=${XDG_CONFIG_HOME:-"$HOME/.config"}/nvim
 for file in init.lua lua/config/lazy.lua lua/plugins/seafoam.lua lua/plugins/snacks.lua \
-  colors/seafoam.lua .minarch-source lazy-lock.json lazyvim.json stylua.toml .neoconf.json LICENSE .gitignore; do
+  colors/seafoam.lua lazy-lock.json lazyvim.json stylua.toml .neoconf.json LICENSE .gitignore; do
   [[ -f "$config/$file" ]] || { echo "FAIL: missing $config/$file" >&2; exit 1; }
 done
-echo "PASS: Blarchy Neovim configuration files exist in $config"
+echo "PASS: Minarch Neovim configuration files exist in $config"
 if ! "$headless"; then
   echo 'SKIP: headless startup (run with --headless; first run downloads plugins/tools).'
   exit 0
