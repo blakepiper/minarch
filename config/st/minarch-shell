@@ -1,0 +1,4 @@
+#!/bin/bash
+# Package-owned startup works even when the installer preserves ~/.bashrc.
+export SHELL=/bin/bash
+exec /bin/bash --rcfile /usr/share/minarch/bashrc -i "$@"

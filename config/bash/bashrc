@@ -4,13 +4,15 @@
 # Attach ble.sh after the prompt is configured, when the AUR package exists.
 if [[ -r /usr/share/blesh/ble.sh ]]; then
   # ble.sh uses dynamic Bash syntax that shellcheck cannot parse as a source.
-  # shellcheck disable=SC1094
+  # shellcheck disable=SC1091,SC1094
   source -- /usr/share/blesh/ble.sh --attach=none
 fi
 export PATH="$HOME/.local/bin:$PATH"
 export EDITOR=nvim
 export VISUAL=nvim
 if [[ -r /usr/share/bash-completion/bash_completion ]]; then
+  # Provided by the target system's bash-completion package.
+  # shellcheck disable=SC1091
   . /usr/share/bash-completion/bash_completion
 fi
 PS1='\u@\h:\w\$ '

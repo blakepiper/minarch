@@ -35,7 +35,12 @@ if [[ -z ${XDG_SESSION_ID:-} ]]; then
   export XDG_SESSION_ID
 fi
 [[ -n $XDG_SESSION_ID ]] || { echo 'No local logind session; cannot arrange suspend locking.' >&2; exit 1; }
-systemctl --user import-environment DISPLAY XAUTHORITY PATH XDG_CURRENT_DESKTOP XDG_SESSION_TYPE XDG_SESSION_ID
+export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
+export XDG_DATA_HOME=${XDG_DATA_HOME:-$HOME/.local/share}
+export XDG_STATE_HOME=${XDG_STATE_HOME:-$HOME/.local/state}
+export XDG_CACHE_HOME=${XDG_CACHE_HOME:-$HOME/.cache}
+systemctl --user import-environment DISPLAY XAUTHORITY PATH XDG_CURRENT_DESKTOP XDG_SESSION_TYPE XDG_SESSION_ID \
+  XDG_CONFIG_HOME XDG_DATA_HOME XDG_STATE_HOME XDG_CACHE_HOME
 systemctl --user daemon-reload
 systemctl --user start minarch-session.target || {
   echo 'Unable to start session locking/services; see journalctl --user.' >&2

@@ -5,14 +5,17 @@ ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 source "$ROOT/install/common.sh"
 REPLACE_CONFIG=false
 CONFIG_ONLY=false
+CLEANUP_RETIRED=false
 for arg in "$@"; do
   case $arg in
     --replace-config) REPLACE_CONFIG=true ;;
     --config-only) CONFIG_ONLY=true ;;
+    --cleanup-retired) CLEANUP_RETIRED=true ;;
     --help)
-      echo 'Usage: ./install.sh [--replace-config] [--config-only]'
+      echo 'Usage: ./install.sh [--replace-config] [--config-only] [--cleanup-retired]'
       echo 'Existing differing configs are preserved unless --replace-config is used.'
       echo '--config-only seeds user files only, without packages, sudo, or system changes.'
+      echo '--cleanup-retired backs up and retires recognized, unmodified old user files.'
       exit 0 ;;
     *) die "Unknown option: $arg" ;;
   esac
@@ -25,6 +28,8 @@ flock -n 9 || die 'Another Minarch installation is running.'
 trap 'printf "ERROR: stage failed at line %s; fix the error above and rerun.\n" "$LINENO" >&2' ERR
 # shellcheck source=install/user.sh
 source "$ROOT/install/user.sh"
+# shellcheck source=install/migrations.sh
+source "$ROOT/install/migrations.sh"
 if "$CONFIG_ONLY"; then
   install_user
   exit 0
@@ -51,4 +56,4 @@ oxwm --validate "${XDG_CONFIG_HOME:-$HOME/.config}/oxwm/config.lua"
 codex --version
 pacman -Q > "$STATE/packages-installed.txt"
 printf '\nMinarch installed. Review preserved-file messages above, then reboot if the kernel changed.\n'
-printf 'Log in on a TTY and run startx. Run ~/minarch/test/smoke.sh after installation.\n'
+printf 'Log in on a TTY and run startx. Run ~/minarch/tests/smoke.sh after installation.\n'

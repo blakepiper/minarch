@@ -1,0 +1,3 @@
+# scope  relative path  comma-separated SHA-256 hashes of shipped versions
+home .local/bin/dev 30749511605fa010383c66f9bc9ef451d4e15a934a6ed76906269081fc50ed2d,6cb108b415bca40bd0bff25298f59860390cfa5b7948578f905dfed50477a036
+config tmux/tmux.conf dcfed912737ee63406f98565ad6b635f385d4c2f9a0aa110b76b9bbf11d06e27

@@ -5,10 +5,10 @@ headless=false
 case ${1:-} in
   '') ;;
   --headless) headless=true ;;
-  *) echo 'Usage: scripts/smoke-test.sh [--headless]' >&2; exit 2 ;;
+  *) echo 'Usage: tests/nvim.sh [--headless]' >&2; exit 2 ;;
 esac
 config=${XDG_CONFIG_HOME:-"$HOME/.config"}/nvim
-for file in init.lua lua/config/lazy.lua lua/plugins/seafoam.lua lua/plugins/snacks.lua \
+for file in init.lua lua/config/lazy.lua lua/config/ide.lua lua/plugins/system.lua lua/plugins/seafoam.lua lua/plugins/snacks.lua \
   colors/seafoam.lua lazy-lock.json lazyvim.json stylua.toml .neoconf.json LICENSE .gitignore; do
   [[ -f "$config/$file" ]] || { echo "FAIL: missing $config/$file" >&2; exit 1; }
 done

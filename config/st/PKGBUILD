@@ -1,16 +1,16 @@
 # Minarch: pinned upstream st with locally reviewed scrollback and URL changes.
 pkgname=st-minarch
 pkgver=0.9.3
-pkgrel=3
+pkgrel=4
 pkgdesc='Simple X11 terminal with Minarch colors, scrollback, and clickable URLs'
 arch=('x86_64')
 url='https://st.suckless.org/'
 license=('MIT')
-depends=('libx11' 'libxft' 'libxext' 'fontconfig' 'ncurses')
+depends=('libx11' 'libxft' 'libxext' 'fontconfig' 'ncurses' 'bash' 'blesh-git')
 provides=('st')
 conflicts=('st')
-source=("https://dl.suckless.org/st/st-$pkgver.tar.gz" 'config.h' '0001-scrollback-and-urls.patch')
-sha256sums=('9ed9feabcded713d4ded38c8cebf36a3b08f0042ef7934a0e2b2409da56e649b' 'SKIP' 'SKIP')
+source=("https://dl.suckless.org/st/st-$pkgver.tar.gz" 'config.h' '0001-scrollback-and-urls.patch' 'minarch-shell' 'bashrc')
+sha256sums=('9ed9feabcded713d4ded38c8cebf36a3b08f0042ef7934a0e2b2409da56e649b' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 prepare() {
   patch -d "$srcdir/st-$pkgver" -p1 < "$srcdir/0001-scrollback-and-urls.patch"
@@ -23,6 +23,8 @@ package() {
   # Arch ncurses already owns st and st-256color terminfo. Do not run upstream
   # make install's unscoped tic command during a package build.
   install -Dm755 "st-$pkgver/st" "$pkgdir/usr/bin/st"
+  install -Dm755 "$srcdir/minarch-shell" "$pkgdir/usr/bin/minarch-shell"
+  install -Dm644 "$srcdir/bashrc" "$pkgdir/usr/share/minarch/bashrc"
   install -Dm644 "st-$pkgver/st.1" "$pkgdir/usr/share/man/man1/st.1"
   install -Dm644 "st-$pkgver/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }

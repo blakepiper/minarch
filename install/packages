@@ -17,11 +17,11 @@ firefox-ublock-origin
 dmenu
 mpv
 feh
+gammastep
 # Development and terminal workflow
 git
 openssh
 neovim
-tmux
 ripgrep
 fd
 fzf
@@ -39,7 +39,9 @@ bash-completion
 base-devel
 shellcheck
 openai-codex
-# Neovim parser builds and Mason extraction (language tools stay with Mason)
+# Neovim system language tools and parser builds
+lua-language-server
+shfmt
 tree-sitter-cli
 tar
 gzip

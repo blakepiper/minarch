@@ -13,7 +13,7 @@ if systemctl --user is-active --quiet minarch-picom.service; then
 fi
 
 # Called by EXIT trap after XSecureLock returns.
-# shellcheck disable=SC2329
+# shellcheck disable=SC2317,SC2329
 restore_picom() {
   if "$picom_was_active" && systemctl --user is-active --quiet minarch-session.target; then
     systemctl --user start minarch-picom.service ||

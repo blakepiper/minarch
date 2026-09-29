@@ -5,5 +5,5 @@ After=minarch-lock.service
 
 [Service]
 Type=exec
-ExecStart=/usr/bin/picom --config %h/.config/picom/picom.conf
+ExecStart=%h/.local/bin/minarch-picom
 Restart=no

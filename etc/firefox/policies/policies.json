@@ -3,20 +3,87 @@
     "FirefoxHome": {
       "SponsoredTopSites": false,
       "Stories": false,
-      "SponsoredStories": false
+      "SponsoredStories": false,
+      "Highlights": false,
+      "Locked": true
     },
     "FirefoxSuggest": {
-      "SponsoredSuggestions": false
+      "SponsoredSuggestions": false,
+      "WebSuggestions": false,
+      "ImproveSuggest": false,
+      "Locked": true
     },
     "EnableTrackingProtection": {
       "Value": true,
-      "Category": "strict"
+      "Category": "strict",
+      "Cryptomining": true,
+      "Fingerprinting": true,
+      "EmailTracking": true,
+      "SuspectedFingerprinting": true
     },
     "Preferences": {
-      "privacy.globalprivacycontrol.enabled": { "Value": true, "Status": "user" }
+      "privacy.globalprivacycontrol.enabled": {
+        "Value": true,
+        "Status": "user"
+      },
+      "privacy.query_stripping.enabled": {
+        "Value": true,
+        "Status": "user"
+      },
+      "privacy.query_stripping.enabled.pbmode": {
+        "Value": true,
+        "Status": "user"
+      },
+      "browser.urlbar.speculativeConnect.enabled": {
+        "Value": false,
+        "Status": "locked"
+      },
+      "network.prefetch-next": {
+        "Value": false,
+        "Status": "locked"
+      },
+      "network.http.speculative-parallel-limit": {
+        "Value": 0,
+        "Status": "locked",
+        "Type": "number"
+      },
+      "browser.crashReports.unsubmittedCheck.autoSubmit2": {
+        "Value": false,
+        "Status": "locked"
+      },
+      "browser.discovery.enabled": {
+        "Value": false,
+        "Status": "locked"
+      }
     },
     "AIControls": {
-      "Default": { "Value": "blocked", "Locked": true }
+      "Default": {
+        "Value": "blocked",
+        "Locked": true
+      }
+    },
+    "DisableTelemetry": true,
+    "DisableFirefoxStudies": true,
+    "DisableRemoteImprovements": true,
+    "NetworkPrediction": false,
+    "SearchSuggestEnabled": false,
+    "HttpsOnlyMode": "enabled",
+    "UserMessaging": {
+      "ExtensionRecommendations": false,
+      "FeatureRecommendations": false,
+      "UrlbarInterventions": false,
+      "MoreFromMozilla": false,
+      "Locked": true
+    },
+    "ExtensionSettings": {
+      "addon@darkreader.org": {
+        "installation_mode": "normal_installed",
+        "install_url": "https://addons.mozilla.org/firefox/downloads/latest/addon@darkreader.org/latest.xpi"
+      },
+      "enhancerforyoutube@maximerf.addons.mozilla.org": {
+        "installation_mode": "normal_installed",
+        "install_url": "https://addons.mozilla.org/firefox/downloads/latest/enhancerforyoutube@maximerf.addons.mozilla.org/latest.xpi"
+      }
     }
   }
 }

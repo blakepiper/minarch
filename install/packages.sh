@@ -15,7 +15,8 @@ build_package() (
   local ble_contrib_rev=d2109203480a7dfe1dead5f5f8f9f15a9146c90d
   stamp="$STATE/builds/$name"
   mkdir -p "$STATE/builds"
-  identity="$recipe:$upstream"
+  # Invalidate stamps written when --needed could skip changed same-version builds.
+  identity="reinstall-v2:$recipe:$upstream"
   if [[ $name == oxwm-git ]]; then
     identity+=":$(sha256sum "$ROOT"/config/oxwm-patches/*.patch | sha256sum | cut -d ' ' -f1)"
   elif [[ $name == blesh-git ]]; then
@@ -61,7 +62,9 @@ SOURCES
   local -a archives=()
   mapfile -t archives < <(makepkg --packagelist)
   ((${#archives[@]})) || die "No package produced for $name"
-  sudo pacman -U --needed -- "${archives[@]}"
+  # The identity check above already skips unchanged builds. Reinstall changed
+  # artifacts even when their pkgver/pkgrel is identical to the installed one.
+  sudo pacman -U -- "${archives[@]}"
   installed=$(pacman -Q "$name")
   printf '%s %s\n' "$identity" "$installed" > "$stamp"
 )
@@ -77,6 +80,7 @@ install_local_packages() {
     build_package "$name" "$recipe" "$upstream"
   done
   identity=$(sha256sum "$ROOT/config/st/PKGBUILD" "$ROOT/config/st/config.h" \
+    "$ROOT/config/st/minarch-shell" "$ROOT/config/st/bashrc" \
     "$ROOT/config/st/0001-scrollback-and-urls.patch" | sha256sum | cut -d ' ' -f1)
   log 'Local patched st build'
   build_package st-minarch "$identity"
