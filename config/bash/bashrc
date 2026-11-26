@@ -8,8 +8,8 @@ if [[ -r /usr/share/blesh/ble.sh ]]; then
   source -- /usr/share/blesh/ble.sh --attach=none
 fi
 export PATH="$HOME/.local/bin:$PATH"
-export EDITOR=nvim
-export VISUAL=nvim
+export EDITOR=vim
+export VISUAL=vim
 if [[ -r /usr/share/bash-completion/bash_completion ]]; then
   # Provided by the target system's bash-completion package.
   # shellcheck disable=SC1091

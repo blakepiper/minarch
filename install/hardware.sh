@@ -36,5 +36,15 @@ hardware_packages() {
   if compgen -G "$sys_root/class/backlight/*/brightness" >/dev/null; then
     echo brightnessctl
   fi
+  for device in "$sys_root"/class/power_supply/*; do
+    [[ -r $device/type ]] && [[ $(<"$device/type") == Battery ]] || continue
+    [[ ! -r $device/scope || $(<"$device/scope") != Device ]] || continue
+    # Respect an existing profile manager and its optional compatibility service.
+    if ! pacman -Q tlp >/dev/null 2>&1 && ! pacman -Q tuned >/dev/null 2>&1 &&
+       ! pacman -Q system76-power >/dev/null 2>&1; then
+      echo power-profiles-daemon
+    fi
+    break
+  done
   return 0
 }

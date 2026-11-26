@@ -1,0 +1,11 @@
+[Unit]
+Description=Refresh the OXWM volume indicator when audio changes
+PartOf=minarch-session.target
+Requires=pipewire-pulse.socket
+After=pipewire-pulse.socket
+ConditionEnvironment=DISPLAY
+
+[Service]
+ExecStart=%h/.local/bin/oxwm-watch-volume
+Restart=always
+RestartSec=5

@@ -40,12 +40,14 @@ build_package() (
       # Pin the VCS source while retaining the reviewed AUR build recipe.
       sed -i "s|https://github.com/tonybanters/oxwm.git\"|https://github.com/tonybanters/oxwm.git#commit=$upstream\"|" "$work/PKGBUILD"
       grep -Fq "#commit=$upstream" "$work/PKGBUILD" || die 'OXWM source pin failed'
-      cp "$ROOT/config/oxwm-patches/0001-microphone-keysym.patch" "$work/microphone.patch"
-      cp "$ROOT/config/oxwm-patches/0002-unique-mirrored-screens.patch" "$work/unique-screens.patch"
+      mkdir "$work/minarch-patches"
+      cp "$ROOT"/config/oxwm-patches/*.patch "$work/minarch-patches/"
       cat >> "$work/PKGBUILD" <<'PREPARE'
 prepare() {
-    patch -d "$srcdir/oxwm" -p1 < "$startdir/microphone.patch"
-    patch -d "$srcdir/oxwm" -p1 < "$startdir/unique-screens.patch"
+    local patch_file
+    for patch_file in "$startdir"/minarch-patches/*.patch; do
+        patch -d "$srcdir/oxwm" -p1 < "$patch_file" || return
+    done
 }
 PREPARE
     elif [[ $name == blesh-git ]]; then

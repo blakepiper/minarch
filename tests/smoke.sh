@@ -9,25 +9,36 @@ pass() { printf 'PASS: %s\n' "$*"; }
 fail() { printf 'FAIL: %s\n' "$*" >&2; failures=$((failures + 1)); }
 check_file() { [[ -f $1 ]] && pass "$1" || fail "Missing $1"; }
 [[ -f /etc/arch-release ]] && pass Arch || fail 'Arch not detected'
-for executable in Xorg startx oxwm st dmenu dmenu_run xfe firefox nvim codex maim slop xclip \
-  clipmenu clipmenud xss-lock xsecurelock picom gammastep fastfetch xkbcomp wpctl pipewire wireplumber playerctl git rg fd lazygit tree-sitter lua-language-server shfmt; do
+for executable in Xorg startx oxwm st dmenu dmenu_run xfe firefox vim codex maim slop xclip \
+  clipmenu clipmenud xss-lock xsecurelock picom gammastep fastfetch xkbcomp wpctl pipewire wireplumber playerctl git rg fd lazygit fc-match; do
   command -v "$executable" >/dev/null && pass "$executable" || fail "Missing $executable"
 done
 check_file "$HOME/.xinitrc"
 check_file /usr/share/blesh/ble.sh
 check_file /usr/share/minarch/bashrc
+check_file /etc/fonts/conf.d/52-minarch-fonts.conf
+if command -v fc-match >/dev/null; then
+  for family in sans-serif serif monospace; do
+    if [[ $(fc-match -f '%{family[0]}' "$family:lang=en") == 'JetBrainsMono Nerd Font' ]]; then
+      pass "JetBrainsMono Nerd Font for $family"
+    else
+      fail "JetBrainsMono Nerd Font did not match $family"
+    fi
+  done
+fi
 [[ -x /usr/bin/minarch-shell ]] && pass 'st Bash/ble.sh launcher' || fail 'Missing st shell launcher'
 grep -Eq '^exec oxwm[[:space:]]*$' "$HOME/.xinitrc" && pass 'xinit launches oxwm' || fail 'xinit must exec oxwm'
 check_file "$config/oxwm/config.lua"
 if command -v oxwm >/dev/null; then
   oxwm --validate "$config/oxwm/config.lua" && pass 'OXWM validation' || fail 'OXWM validation'
 fi
-for binding in 'spawn_terminal()' '"dmenu_run"' '"xfe"' '"firefox"' '"screenshot-region"' \
+for binding in 'spawn_terminal()' '"dmenu_run"' '"xfe"' '"firefox"' '"blix-settings"' '"screenshot-region"' \
   '"clipboard-history"' '"minarch-lock"' '"control-menu"' 'oxwm.tag.view(i - 1)' 'oxwm.tag.move_to(i - 1)'; do
   grep -Fq "$binding" "$config/oxwm/config.lua" && pass "$binding" || fail "Missing binding: $binding"
 done
-for helper in nvimide screenshot-region control-menu clipboard-history minarch-lock minarch-brightness minarch-stats \
-  minarch-hardware-hotplug minarch-picom oxwm-battery oxwm-cpu xsecurelock-without-picom; do
+for helper in screenshot-region control-menu clipboard-history minarch-lock minarch-brightness minarch-stats \
+  blix-settings blix-settings-apply oxwm-volume oxwm-brightness minarch-monitor-brightness \
+  minarch-hardware-hotplug minarch-picom oxwm-watch-volume xsecurelock-without-picom; do
   file=$HOME/.local/bin/$helper
   [[ -x $file ]] && pass "$helper executable" || fail "$helper is not executable"
   bash -n "$file" && pass "$helper syntax" || fail "$helper syntax"
@@ -39,12 +50,10 @@ check_file "$config/xfe/xferc"
 check_file "$config/fastfetch/config.jsonc"
 check_file "$config/systemd/user/minarch-picom.service"
 check_file "$config/systemd/user/minarch-hardware-hotplug.service"
+check_file "${XDG_DATA_HOME:-$HOME/.local/share}/minarch/blix-settings/main.py"
 [[ -x $HOME/.local/lib/clipmenu-text-probe/xsel ]] && pass 'Clipboard text probe executable' || fail 'Clipboard text probe missing'
-if [[ -f ${XDG_DATA_HOME:-$HOME/.local/share}/nvim/lazy/lazy.nvim/lua/lazy/init.lua ]]; then
-  "$root/tests/nvim.sh" --headless || fail 'Neovim headless startup'
-else
-  "$root/tests/nvim.sh" || fail 'Neovim files'
-  echo 'SKIP: Neovim bootstrap needs first-run downloads; run tests/nvim.sh --headless explicitly.'
+if command -v vim >/dev/null; then
+  vim -N -u NONE -i NONE -n -es -c 'qa!' </dev/null && pass 'Vim startup' || fail 'Vim startup'
 fi
 if command -v codex >/dev/null; then codex --version && pass 'Codex version' || fail 'Codex version'; fi
 # Repository policy checks distinguish user-owned services from Minarch choices.

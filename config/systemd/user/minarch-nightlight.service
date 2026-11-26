@@ -1,0 +1,9 @@
+[Unit]
+Description=Apply the saved Minarch night light setting
+PartOf=minarch-session.target
+ConditionEnvironment=DISPLAY
+
+[Service]
+Type=exec
+ExecStart=%h/.local/bin/blix-settings-apply nightlight
+ExecStopPost=/usr/bin/gammastep -m randr -x

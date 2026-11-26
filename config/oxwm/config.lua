@@ -1,20 +1,6 @@
 -- Verified against tonybanters/oxwm fc4ada9ac4ee8e34ace203290a2b14d10e4671cc.
 -- Lua actions are native OXWM operations; arrows mean stack/monitor order.
 local mod = "Mod4"
-local colors = {
-  bg = "#1a1b26",
-  fg = "#bbbbbb",
-  accent = "#9fe3c4",
-  workspace_highlight = "#d7ffe8",
-  workspace_occupied = "#6ee7a0",
-  dim = "#34324a",
-  red = "#f7768e",
-  blue = "#7aa2f7",
-  lavender = "#bb9af7",
-  cyan = "#0db9d7",
-  orange = "#e0af68",
-  green = "#9ece6a",
-}
 oxwm.set_terminal("st")
 oxwm.set_modkey(mod)
 oxwm.set_tags({ "1", "2", "3", "4", "5", "6", "7", "8", "9" })
@@ -27,22 +13,18 @@ for i = 1, 9 do
   oxwm.set_tag_layout(i, "dwindle")
 end
 oxwm.set_attach_method("bottom")
-oxwm.gaps.set_enabled(true)
-oxwm.gaps.set_inner(8, 8)
-oxwm.gaps.set_outer(8, 8)
-oxwm.border.set_width(2)
-oxwm.border.set_focused_color(colors.accent)
-oxwm.border.set_unfocused_color(colors.dim)
-oxwm.bar.set_font("JetBrainsMono Nerd Font:size=10")
-oxwm.bar.set_scheme_normal(colors.fg, colors.bg, colors.dim)
-oxwm.bar.set_scheme_occupied(colors.workspace_occupied, colors.bg, colors.dim)
-oxwm.bar.set_scheme_selected(colors.accent, colors.bg, colors.workspace_highlight)
-oxwm.bar.set_scheme_urgent(colors.red, colors.bg, colors.red)
-oxwm.bar.set_hide_vacant_tags(false)
 
+-- OXWM requires a color for custom status blocks. Use its default bar foreground.
+local block_foreground = 0xbbbbbb
 local blocks = {}
--- The X session detects the actual battery name once. Lua only reads sysfs;
--- the shell helper adds an estimate from the current discharge rate.
+local power_labels = { performance = "Performance", balanced = "Balanced", ["power-saver"] = "Power Saver" }
+local power_modes = {}
+for profile in (os.getenv("MINARCH_POWER_PROFILES") or ""):gmatch("%S+") do
+  if power_labels[profile] then
+    table.insert(power_modes, { label = power_labels[profile], value = profile })
+  end
+end
+-- The X session detects the battery name once.
 local battery = os.getenv("MINARCH_BATTERY")
 if battery and battery:match("^[%w_%-]+$") then
   local probe = io.open("/sys/class/power_supply/" .. battery .. "/type", "r")
@@ -50,53 +32,56 @@ if battery and battery:match("^[%w_%-]+$") then
     local present = probe:read("*l") == "Battery"
     probe:close()
     if present then
-      table.insert(blocks, oxwm.bar.block.shell({
-        format = "{}",
-        command = "oxwm-battery",
+      table.insert(blocks, oxwm.bar.block.battery({
+        battery_name = battery,
+        charging = "Bat +{}%",
+        discharging = "Bat {}% {}",
+        full = "Bat {}% full",
         interval = 30,
-        color = colors.green,
-        underline = false,
+        color = block_foreground,
+        click = #power_modes > 0 and {
+          command = "blix-settings-apply power-mode {}",
+          choices = {
+            label = "Power mode",
+            read_command = "blix-settings-apply power-mode",
+            options = power_modes,
+          },
+        } or nil,
       }))
     end
   end
 end
-table.insert(blocks, oxwm.bar.block.static({
-  text = "│",
-  interval = 999999999,
-  color = colors.lavender,
-  underline = false,
-}))
-table.insert(blocks, oxwm.bar.block.ram({
-  format = "Ram: {used}/{total} GB",
-  interval = 5,
-  color = colors.blue,
-  underline = true,
-}))
-table.insert(blocks, oxwm.bar.block.static({
-  text = "│",
-  interval = 999999999,
-  color = colors.lavender,
-  underline = false,
-}))
 table.insert(blocks, oxwm.bar.block.shell({
-  format = "CPU: {}%",
-  command = "oxwm-cpu",
-  interval = 5,
-  color = colors.orange,
-  underline = true,
+  format = "Vol {}",
+  command = "oxwm-volume",
+  interval = 0,
+  refresh_property = "_MINARCH_VOLUME",
+  color = block_foreground,
+  click = {
+    command = "wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ {}%",
+    slider = { label = "Volume", min = 0, max = 100 },
+  },
 }))
-table.insert(blocks, oxwm.bar.block.static({
-  text = "│",
-  interval = 999999999,
-  color = colors.lavender,
-  underline = false,
-}))
+local brightness = os.getenv("MINARCH_BRIGHTNESS")
+if brightness == "backlight" or brightness == "ddc" then
+  table.insert(blocks, oxwm.bar.block.shell({
+    format = "Bri {}",
+    command = brightness == "ddc" and "minarch-monitor-brightness" or "oxwm-brightness",
+    interval = 0,
+    refresh_property = "_MINARCH_BRIGHTNESS",
+    color = block_foreground,
+    click = {
+      command = brightness == "ddc" and "minarch-monitor-brightness {}"
+        or "brightnessctl --class=backlight --min-value=1 set {}%",
+      slider = { label = "Brightness", min = 1, max = 100 },
+    },
+  }))
+end
 table.insert(blocks, oxwm.bar.block.datetime({
   format = "{}",
   date_format = "%a, %b %d - %H:%M",
   interval = 60,
-  color = colors.cyan,
-  underline = true,
+  color = block_foreground,
 }))
 oxwm.bar.set_blocks(blocks)
 
@@ -107,6 +92,7 @@ oxwm.key.bind({ mod }, "Space", oxwm.spawn("dmenu_run"))
 oxwm.key.bind({ mod }, "D", oxwm.spawn("dmenu_run"))
 oxwm.key.bind({ mod }, "F", oxwm.spawn("xfe"))
 oxwm.key.bind({ mod }, "B", oxwm.spawn("firefox"))
+oxwm.key.bind({ mod }, "S", oxwm.spawn("blix-settings"))
 oxwm.key.bind({ mod }, "P", oxwm.client.toggle_floating())
 oxwm.key.bind({ mod }, "C", oxwm.layout.set("tiling"))
 oxwm.key.bind({ mod }, "R", oxwm.layout.set("dwindle"))

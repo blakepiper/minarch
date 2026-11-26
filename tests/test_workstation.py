@@ -27,7 +27,6 @@ class Sandbox(unittest.TestCase):
         self.env = dict(os.environ, HOME=str(self.home), XDG_CONFIG_HOME=str(self.home / ".config"),
                         XDG_STATE_HOME=str(self.home / ".local/state"), XDG_RUNTIME_DIR=str(self.base),
                         PATH=str(self.commands) + ":" + os.environ["PATH"])
-        self.env.pop("NVIM_APPNAME", None)
 
     def command(self, name, body):
         path = self.commands / name
@@ -110,19 +109,19 @@ class ConfigSafety(Sandbox):
         source = self.base / "source"
         source.mkdir()
         (source / ".hidden").write_text("dotfile")
-        (source / "init.lua").write_text("upstream")
-        target = self.home / "config with spaces/nvim"
+        (source / "settings.conf").write_text("upstream")
+        target = self.home / "config with spaces/example"
         self.install(source, target)
         self.assertEqual((target / ".hidden").read_text(), "dotfile")
-        (target / "init.lua").write_text("user")
+        (target / "settings.conf").write_text("user")
         self.install(source, target)
-        self.assertEqual((target / "init.lua").read_text(), "user")
+        self.assertEqual((target / "settings.conf").read_text(), "user")
         self.install(source, target, replace=True)
-        backups = list(target.parent.glob("nvim.backup.*/original/init.lua"))
+        backups = list(target.parent.glob("example.backup.*/original/settings.conf"))
         self.assertEqual(len(backups), 1)
         self.assertEqual(backups[0].read_text(), "user")
         self.install(source, target, replace=True)
-        self.assertEqual(len(list(target.parent.glob("nvim.backup.*"))), 1)
+        self.assertEqual(len(list(target.parent.glob("example.backup.*"))), 1)
         self.assertFalse(list(target.parent.glob(".minarch-stage.*")))
 
     def test_dangling_symlink_and_file(self):
@@ -138,10 +137,11 @@ class ConfigSafety(Sandbox):
         self.assertEqual(target.read_text(), "new")
 
     def test_complete_user_seed(self):
+        data_home = self.home / "data with spaces"
+        self.env["XDG_DATA_HOME"] = str(data_home)
         run([str(ROOT / "install.sh"), "--config-only"], env=self.env)
         run([str(ROOT / "install.sh"), "--config-only"], env=self.env)
         self.assertTrue((self.home / ".xinitrc").is_file())
-        self.assertTrue((self.home / ".local/bin/nvimide").stat().st_mode & 0o111)
         self.assertTrue((self.home / ".local/bin/minarch-hardware-hotplug").stat().st_mode & 0o111)
         self.assertTrue((self.home / ".local/bin/xsecurelock-without-picom").stat().st_mode & 0o111)
         self.assertTrue((self.home / ".local/lib/clipmenu-text-probe/xsel").stat().st_mode & 0o111)
@@ -149,7 +149,16 @@ class ConfigSafety(Sandbox):
         self.assertTrue((self.home / ".config/minarch/hardware.conf").is_file())
         self.assertTrue((self.home / ".config/xfe/xferc").is_file())
         self.assertTrue((self.home / ".config/fastfetch/config.jsonc").is_file())
-        run(["diff", "-r", str(ROOT / "config/nvim"), str(self.home / ".config/nvim")])
+        launcher = self.home / ".local/bin/blix-settings"
+        self.assertTrue((data_home / "minarch/blix-settings/main.py").is_file())
+        self.assertIn("--demo", run([str(launcher), "--help"], env=self.env).stdout)
+        runtime = self.home / ".local/bin/blix-settings-apply"
+        env = dict(self.env, PATH=str(runtime.parent) + ":" + self.env["PATH"])
+        generated = Path(run([str(runtime), "prepare-picom"], env=env).stdout.strip())
+        self.assertIn("opacity-override = true", generated.read_text())
+        result = run(["bash", "--noprofile", "--rcfile", str(self.home / ".bashrc"), "-ic",
+                      'printenv EDITOR VISUAL'], env=self.env)
+        self.assertEqual(result.stdout.splitlines(), ["vim", "vim"])
         self.assertFalse(list(self.home.rglob("*.backup.*")))
 
 
@@ -331,12 +340,13 @@ if [[ $1 == --query ]]; then cat "$TEST_OUTPUTS"; else echo "xrandr $*" >> "$TES
         self.command('xkbcomp', 'cat >/dev/null\n')
         self.command('sleep', 'exit 0\n')
         self.command('udevadm', '''
-case $* in
-  *subsystem-match=input*)
-    printf 'ACTION=add\\nID_VENDOR_ID=abcd\\nID_MODEL_ID=1234\\n\\n'
-    printf 'ACTION=add\\nID_VENDOR_ID=ffff\\nID_MODEL_ID=1234\\n\\n' ;;
-  *subsystem-match=drm*) printf 'ACTION=change\\nHOTPLUG=1\\n\\n' ;;
-esac
+if [[ $* == *subsystem-match=input* ]]; then
+  printf 'SUBSYSTEM=input\nACTION=add\nID_VENDOR_ID=abcd\nID_MODEL_ID=1234\n\n'
+  printf 'SUBSYSTEM=input\nACTION=add\nID_VENDOR_ID=ffff\nID_MODEL_ID=1234\n\n'
+fi
+if [[ $* == *subsystem-match=drm* ]]; then
+  printf 'SUBSYSTEM=drm\nACTION=change\nHOTPLUG=1\n\n'
+fi
 ''')
 
     def test_custom_keyboard_and_monitor_settings_on_startup_and_hotplug(self):
@@ -359,6 +369,27 @@ esac
         self.profile.unlink()
         run([str(ROOT / 'bin/minarch-hardware-hotplug'), '--once'], env=self.env)
         self.assertFalse(self.calls.exists())
+
+    def test_one_watcher_dispatches_input_and_brightness_events(self):
+        self.command('blix-settings-apply', '''
+echo "settings $*" >> "$TEST_CALLS"
+if [[ $1 == display-hotplug ]]; then exit 2; fi
+''')
+        self.command('xprop', 'echo "xprop $*" >> "$TEST_CALLS"\n')
+        self.command('udevadm', '''
+echo "udevadm $*" >> "$TEST_CALLS"
+printf 'SUBSYSTEM=input\nACTION=add\nDEVNAME=/dev/input/event12\n\n'
+printf 'SUBSYSTEM=backlight\nACTION=change\n\n'
+''')
+        run([str(ROOT / 'bin/minarch-hardware-hotplug')],
+            env=dict(self.env, MINARCH_BRIGHTNESS='backlight'))
+        rows = self.calls.read_text().splitlines()
+        watchers = [row for row in rows if row.startswith('udevadm ')]
+        self.assertEqual(len(watchers), 1)
+        self.assertIn('--subsystem-match=input', watchers[0])
+        self.assertIn('--subsystem-match=backlight', watchers[0])
+        self.assertEqual(rows.count('settings apply-input'), 1)
+        self.assertTrue(any('-set _MINARCH_BRIGHTNESS refresh' in row for row in rows))
 
 
 class Screenshots(Sandbox):

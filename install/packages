@@ -4,12 +4,13 @@ xorg-xinit
 xf86-input-libinput
 xorg-xauth
 xorg-xset
-xorg-xsetroot
 xorg-setxkbmap
 xorg-xkbcomp
 xorg-xrandr
 xorg-xprop
 xorg-xdpyinfo
+xorg-xinput
+xorg-xrdb
 xdg-utils
 # Applications
 firefox
@@ -21,7 +22,7 @@ gammastep
 # Development and terminal workflow
 git
 openssh
-neovim
+vim
 ripgrep
 fd
 fzf
@@ -39,12 +40,6 @@ bash-completion
 base-devel
 shellcheck
 openai-codex
-# Neovim system language tools and parser builds
-lua-language-server
-shfmt
-tree-sitter-cli
-tar
-gzip
 # Local st build dependencies
 libx11
 libxft
@@ -65,6 +60,17 @@ pipewire
 wireplumber
 pipewire-pulse
 playerctl
+# Blix Settings runtime and audio utilities
+gtk3
+adwaita-icon-theme
+python
+python-gobject
+python-dbus
+libnm
+nm-connection-editor
+libpulse
+libnotify
+ddcutil
 # Fonts
 ttf-jetbrains-mono-nerd
 noto-fonts

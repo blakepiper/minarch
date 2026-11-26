@@ -1,8 +1,8 @@
 # Minarch: pinned upstream st with locally reviewed scrollback and URL changes.
 pkgname=st-minarch
 pkgver=0.9.3
-pkgrel=4
-pkgdesc='Simple X11 terminal with Minarch colors, scrollback, and clickable URLs'
+pkgrel=5
+pkgdesc='Simple X11 terminal with scrollback, and clickable URLs'
 arch=('x86_64')
 url='https://st.suckless.org/'
 license=('MIT')

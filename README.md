@@ -3,7 +3,7 @@
 # Minarch
 
 A small, keyboard-first post-install configuration for **Arch Linux x86_64**.
-OXWM, st with Bash/ble.sh, and Picom provide the desktop. Neovim and Codex
+OXWM, st with Bash/ble.sh, and Picom provide the desktop. Vim and Codex
 provide the development workflow. Minarch favors low idle activity and
 understandable components.
 
@@ -12,7 +12,7 @@ and tests are linked below; historical implementation notes remain in Git histor
 
 - [Installation](#installation)
 - [Desktop and keybindings](#desktop-and-keybindings)
-- [Terminal and Neovim](#terminal-and-neovim)
+- [Terminal and Vim](#terminal-and-vim)
 - [Firefox](#firefox)
 - [Files, media, and hardware](#files-media-and-hardware)
 - [Screenshots, clipboard, and locking](#screenshots-clipboard-and-locking)
@@ -61,18 +61,29 @@ Reboot if the kernel or input rules changed. Log in on a local TTY and run
 loop. Quitting OXWM returns to the TTY.
 
 [Session startup](config/session/xinitrc) imports the local logind session,
-configures input and external displays, sets a solid dark background, starts
-session services, and ends in `exec oxwm`. Picom keeps all windows fully opaque;
-shadows, fading, blur, and rounded corners are disabled.
+configures input and external displays, starts session services, and ends in
+`exec oxwm`. Picom defaults to fully opaque windows. Shadows, fading, blur, and
+rounded corners are disabled.
 
 The installer and session helpers honor `XDG_CONFIG_HOME`, falling back to
 `~/.config`. X startup imports the XDG config/data/state/cache directories into
 the user service environment. Picom's launcher resolves its config there too.
 
-OXWM starts each workspace in dwindle layout with 8 px gaps and 2 px borders.
-Its built-in bar shows tags, RAM, CPU, a minute-resolution clock, and a battery
-runtime estimate when a battery exists. Edit `~/.config/oxwm/config.lua` and
-restart OXWM or the X session to apply changes; there is no reload binding.
+OXWM starts each workspace in dwindle layout with upstream gaps, borders, and
+bar styling. Click **Vol** for the volume slider or **Bri** for the brightness
+slider on systems with a panel backlight or an accessible DDC/CI monitor.
+Click **Bat** on a laptop to select a mode offered by its power-profile service.
+The bar also shows the date and time and a battery runtime estimate when available.
+
+**Super+S** opens or focuses Blix Settings. Its GTK interface includes display,
+audio, network, Bluetooth, power, input, and shortcuts. Network and Bluetooth
+controls use existing NetworkManager and BlueZ services when available. For
+external brightness, enable DDC/CI on the monitor. The slider controls the
+first DDC/CI display and requires local access to its I²C device.
+The controls and GTK app are adapted from [Blix](https://github.com/blakepiper/blix).
+
+Edit `~/.config/oxwm/config.lua` and restart OXWM or the X session to apply
+changes. There is no reload binding.
 
 Super means Mod4 and Alt means Mod1. The source of truth is
 [config/oxwm/config.lua](config/oxwm/config.lua).
@@ -83,6 +94,7 @@ Super means Mod4 and Alt means Mod1. The source of truth is
 | Super+Space, Super+D | Launch dmenu_run (installed commands) |
 | Super+F | Launch Xfe |
 | Super+B | Launch Firefox |
+| Super+S | Open or focus Blix Settings |
 | Super+Q | Close focused window |
 | Super+P | Toggle focused window floating |
 | Super+Shift+F | Toggle fullscreen |
@@ -127,10 +139,10 @@ binding through xdotool. Pressing that binding directly quits immediately.
 The pinned OXWM build has no external quit IPC. Master resizing uses ±50 in
 OXWM's 1/1000 units for a five-percentage-point change.
 
-## Terminal and Neovim
+## Terminal and Vim
 
-st 0.9.3 includes the Seafoam palette, JetBrains Mono Nerd Font, 5000 lines of
-scrollback, mouse-wheel and Shift+PageUp/PageDown scrolling, Shift+Home/End
+st 0.9.3 uses its upstream colors and font. The included patches add 5000 lines
+of scrollback, mouse-wheel and Shift+PageUp/PageDown scrolling, Shift+Home/End
 jumps, and underlined clickable HTTP(S) URLs. Ctrl+Shift+C/V copies/pastes;
 middle-click pastes PRIMARY. Hold Shift to select text when an application
 captures the mouse. Alternate-screen applications retain their own scrolling.
@@ -143,35 +155,12 @@ and the account's login shell is unchanged. For TTY access to Minarch helpers,
 ensure your Bash configuration exports `PATH="$HOME/.local/bin:$PATH"`.
 X sessions already set that path.
 
-Open st with Super+Enter and run `nvim .` in a project. For the integrated editor
-layout, use:
+Open st with Super+Enter and run `vim path/to/file` or `vim .` in a project.
+Minarch installs Vim with its stock defaults and sets `EDITOR` and `VISUAL`
+to `vim` in its Bash configuration.
 
-```sh
-nvimide [project-directory] [Neovim arguments...]
-```
-
-A leading directory becomes the working directory; remaining arguments pass
-through to Neovim. The launcher sets `MINARCH_NVIMIDE=1` to open a 30-column
-left file explorer and two bottom terminals, retaining editor focus. Plain
-`nvim` does not enable this layout.
-
-[config/nvim](config/nvim) contains the complete LazyVim/lazy.nvim configuration,
-Seafoam colorscheme, plugin overrides, and lockfile. Plugins and parsers download
-on first use. Minarch uses system `lua-language-server` and `shfmt`, disables
-Mason, selects Blink's Lua fuzzy matcher, and uses LSP formatting for Lua.
-Disabled Mason plugins are omitted from the lockfile.
-The parser build tools and archive utilities are in the package manifest.
-The lazy.nvim update checker is enabled.
-
-The bootstrap seeds its working lockfile from the repository only when the
-state copy is absent. To restore the repository's plugin pins, close Neovim
-and run from the repository root:
-
-```sh
-mkdir -p "${XDG_STATE_HOME:-$HOME/.local/state}/nvim"
-cp config/nvim/lazy-lock.json "${XDG_STATE_HOME:-$HOME/.local/state}/nvim/lazy-lock.json"
-nvim --headless '+Lazy! restore' '+qa!'
-```
+JetBrains Mono Nerd Font is the system Fontconfig default for sans-serif, serif,
+and monospace. Noto fonts provide additional script and emoji coverage.
 
 Codex is supplied by Arch's `openai-codex` package. Run `codex --version`, then
 `codex` in a project and complete its first-run authentication. The installer
@@ -253,15 +242,7 @@ manually; no automounter is included. PipeWire, WirePlumber, and pipewire-pulse
 handle audio. Media and brightness bindings are listed above.
 
 Gammastep is installed for color-temperature adjustment, with no default
-schedule or autostart. `horizon.png` and `night.png` install under
-`~/.config/wallpaper/`; startup still uses a solid background. To display one
-for the current session:
-
-```sh
-feh --bg-fill "${XDG_CONFIG_HOME:-$HOME/.config}/wallpaper/horizon.png"
-```
-
-feh exits after setting the background; no wallpaper daemon is needed.
+schedule or autostart. The X session uses the default root background.
 
 Keyboard repeat is 200 ms/50 Hz. Touchpads use natural scrolling, tapping, and
 disable-while-typing. Mouse natural scrolling excludes touchpads, tablets,
@@ -339,15 +320,14 @@ add no idle process merely by being installed.
 | Purpose | Direct official packages | Rationale / persistent activity |
 | --- | --- | --- |
 | X server/session | xorg-server, xorg-xinit, xf86-input-libinput, xorg-xauth | Xorg, startx and input; no display manager |
-| X configuration/inspection | xorg-xset, xorg-xsetroot, xorg-setxkbmap, xorg-xkbcomp, xorg-xrandr, xorg-xprop, xorg-xdpyinfo | Keyboard remapping, display setup, DPMS, and inspection; xdpyinfo is also used by startx |
+| X configuration/inspection | xorg-xset, xorg-setxkbmap, xorg-xkbcomp, xorg-xrandr, xorg-xprop, xorg-xdpyinfo | Keyboard remapping, display setup, DPMS, and inspection; xdpyinfo is also used by startx |
 | URL/MIME opening | xdg-utils | Browser authentication links and MIME defaults without a DE |
 | Browser | firefox, firefox-ublock-origin | Privacy policies; packaged uBlock Origin; Dark Reader and Enhancer for YouTube installed through Mozilla Add-ons |
 | Launcher/media | dmenu, mpv, feh | Immediate command search; on-demand playback/image viewing |
 | Screen color temperature | gammastep | Included for user-configured color temperature adjustment; no default autostart |
-| Project workflow | git, openssh, neovim, fastfetch, lazygit | Requested editor, compact system display, Git tools and SSH client; sshd never enabled |
+| Project workflow | git, openssh, vim, fastfetch, lazygit | Requested editor, compact system display, Git tools and SSH client; sshd never enabled |
 | CLI tools | ripgrep, fd, fzf, curl, jq, bat, eza, btop, less, man-db, unzip, bash-completion | Explicitly requested tools; no background services |
 | Builds/checks | base-devel, shellcheck, libx11, libxft, libxext, fontconfig | AUR/st compilation and repo checks; gcc/make/patch come from base-devel |
-| Editor tools | lua-language-server, shfmt, tree-sitter-cli, tar, gzip | System Lua LSP and shell formatter; Treesitter parser generation and archive extraction |
 | Codex | openai-codex | Maintained official Arch binary package; no AUR/npm/Node requirement |
 | Screenshots | maim, slop, xclip | Region capture, selection, exact PNG X clipboard ownership |
 | Clipboard | clipmenu | dmenu text history; its small clipnotify/xsel/xdotool dependencies serve X selections; event-driven watcher |
@@ -364,7 +344,7 @@ add no idle process merely by being installed.
 | oxwm-git | Pinned AUR recipe/source; Zig window manager with microphone keysym and mirrored-screen patches |
 | xfe | Pinned AUR recipe for the graphical file manager |
 | blesh-git | Pinned AUR recipe plus ble.sh/contrib source commits; interactive Bash editing |
-| st-minarch | Local recipe for st 0.9.3, scrollback/URL patch, palette, and Bash/ble.sh startup |
+| st-minarch | Local recipe for st 0.9.3, scrollback/URL patch and Bash/ble.sh startup |
 
 AUR packages are built directly with makepkg as the normal user; no AUR helper
 is required. Build dependencies may remain installed. Official dependencies may
@@ -391,6 +371,7 @@ invalidated once to recover builds that may previously have been skipped.
 | `minarch-lock.service` / xss-lock | During X | Receives X/logind events, holds suspend delay inhibitor, launches XSecureLock only when needed |
 | `minarch-clipboard.service` / clipmenud + clipnotify | During X | Event-driven text clipboard history required for Super+V |
 | `minarch-hardware-hotplug.service` / udev monitor | During X | Restores the selected external keyboard map and HDMI mirror after reconnects |
+| `minarch-bar-volume.service` / pactl subscribe | During X | Refreshes the volume block on sink and server changes |
 | `minarch-picom.service` / picom | During X except while locked | Compositing with fully opaque windows; stopped before XSecureLock and restarted after unlock |
 | `pipewire.socket`, `pipewire-pulse.socket` | Started with the X session | On-demand native/Pulse audio endpoints |
 | `wireplumber.service` and PipeWire audio processes | User audio session | Device/session routing and reliable browser audio |
@@ -398,8 +379,12 @@ invalidated once to recover builds that may previously have been skipped.
 The session target binds to xss-lock. When its X connection disappears, the
 target stops clipboard, hotplug, and Picom services. Audio may remain while the
 TTY session is logged in; no user lingering is enabled. The hotplug helper
-watches udev events. CPU and RAM bar updates run every five seconds, battery
-updates every 30 seconds, and the clock every minute.
+watches input, display, and backlight events through one udev subscription.
+The volume and brightness blocks refresh on changes. The battery menu reads
+the active power mode while open. OXWM reads battery data every 30 seconds
+in-process. The clock updates every minute.
+Blix Settings refreshes when focused, when switching pages, after edits, and
+when you press F5.
 
 Minarch does not enable another network manager, sshd, Bluetooth, printing,
 automounting, notifications, portals, a graphical privilege agent, keyrings,
@@ -454,9 +439,8 @@ Managed user and system files follow the same rules:
 - To restore, move the replacement aside and move `original` back to its old
   pathname; use sudo for system paths. Symlinks are backed up as links.
 
-The entire Neovim directory is one managed unit. Package-owned files, including
-st's launcher, are updated by pacman. The installer never uninstalls unrelated
-packages or removes user-owned services.
+Package-owned files, including st's launcher, are updated by pacman. The
+installer never uninstalls unrelated packages or removes user-owned services.
 
 ## Checks and troubleshooting
 
@@ -467,7 +451,6 @@ root; `check.sh` accepts optional unittest selectors for focused checks:
 ./tests/check.sh                 # lint, shell syntax, isolated integration tests
 ./tests/check.sh ConfigSafety    # lint and installer tests
 ./tests/smoke.sh                 # installed-workstation checks
-./tests/nvim.sh --headless       # Neovim startup; first run needs downloads
 ./tests/validate-oxwm.sh         # builds pinned OXWM and checks parsed bindings
 python3 tests/x11.py             # optional nested-X integration tests
 minarch-stats                   # on-demand system audit
@@ -479,11 +462,9 @@ and the installed X11 tools; it does not operate on the main X session.
 Tests do not perform real suspend, reboot, or poweroff.
 
 The September 28 checks passed 23 isolated integration tests, repository shell
-lint and syntax checks, OXWM configuration validation, normal/IDE-mode headless
-Neovim startup, Firefox policy schema and extension
-ID checks, and Picom configuration diagnostics. Headless editor startup does not
-verify the visible IDE layout. Earlier nested-X and package-build results are in
-Git history; they are not a full validation of the current installation.
+lint and syntax checks, OXWM configuration validation, Firefox policy schema and
+extension ID checks, and Picom configuration diagnostics. Git history contains
+the earlier nested-X and package-build results.
 
 Installer regressions cover same-version rebuilds and failure retries, custom
 configuration paths, conservative retired-file cleanup, and configurable
@@ -493,16 +474,14 @@ checks.
 
 Still verify on the installed workstation: a complete Arch package transaction,
 first TTY/startx session, actual extension installation, password locking,
-lid/suspend/resume, GPU acceleration, display/input hotplug, audio, brightness,
-and the visible Neovim IDE layout.
+lid/suspend/resume, GPU acceleration, display/input hotplug, audio, and brightness.
 
 | Area | Checks |
 | --- | --- |
 | Xorg | Start from a local TTY without sudo. Inspect `~/.local/share/xorg/Xorg.0.log`, `journalctl -b`, `lspci -k`, and `xrandr`. |
-| OXWM | Run `oxwm --validate ~/.config/oxwm/config.lua`; parser tests cover all 66 bindings and duplicate combinations. |
+| OXWM | Run `oxwm --validate ~/.config/oxwm/config.lua`; parser tests cover all 67 bindings and duplicate combinations. |
 | Lock/session | Inspect `journalctl --user -u minarch-lock.service` and `systemctl --user status minarch-session.target`; confirm DISPLAY and XDG_SESSION_ID in `systemctl --user show-environment`. |
 | st | Check `fc-match 'JetBrainsMono Nerd Font'`, `locale`, and `infocmp st-256color`; rerun the installer after source/config changes. |
-| Neovim | Check system language tools and network access for plugin/parser downloads; use the lockfile restore commands above. |
 | Firefox | Restart fully, inspect `about:policies` for errors and `about:addons` for the extensions. |
 | Audio | Run `wpctl status` and inspect user PipeWire/WirePlumber units. |
 | Network | Inspect your existing stack; use `nmcli` with NetworkManager. |

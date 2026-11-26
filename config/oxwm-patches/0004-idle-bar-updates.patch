@@ -1,0 +1,342 @@
+diff --git a/src/bar/blocks/battery.zig b/src/bar/blocks/battery.zig
+index 6614753..74f99c2 100644
+--- a/src/bar/blocks/battery.zig
++++ b/src/bar/blocks/battery.zig
+@@ -42,9 +42,28 @@ pub const Battery = struct {
+         var cap_buf: [8]u8 = undefined;
+         const cap_str = std.fmt.bufPrint(&cap_buf, "{d}", .{capacity}) catch return buffer[0..0];
+ 
++        if (status == .discharging and std.mem.count(u8, format, "{}") >= 2) {
++            var time_buffer: [32]u8 = undefined;
++            const remaining = self.remainingTime(io, &path_buf, &time_buffer);
++            return std.mem.trimEnd(u8, format_util.substituteMulti(format, &.{ cap_str, remaining }, buffer), " ");
++        }
+         return format_util.substitute(format, cap_str, buffer);
+     }
+ 
++    fn remainingTime(self: *Battery, io: std.Io, path: *[128]u8, buffer: []u8) []const u8 {
++        for ([_][2][]const u8{ .{ "energy_now", "power_now" }, .{ "charge_now", "current_now" } }) |pair| {
++            const remaining = self.readBatteryFile(io, path, pair[0]) orelse continue;
++            const rate = self.readBatteryFile(io, path, pair[1]) orelse continue;
++            if (remaining == 0 or rate == 0) continue;
++            const minutes = remaining * 60 / rate;
++            return if (minutes >= 60)
++                std.fmt.bufPrint(buffer, "{d}h{d}m", .{ minutes / 60, minutes % 60 }) catch ""
++            else
++                std.fmt.bufPrint(buffer, "{d}m", .{minutes}) catch "";
++        }
++        return "";
++    }
++
+     const Status = enum { charging, discharging, full };
+ 
+     fn readBatteryStatus(self: *Battery, io: std.Io, path_buf: *[128]u8) ?Status {
+@@ -64,7 +83,7 @@ pub const Battery = struct {
+         return .discharging;
+     }
+ 
+-    fn readBatteryFile(self: *Battery, io: std.Io, path_buf: *[128]u8, file_name: []const u8) ?u8 {
++    fn readBatteryFile(self: *Battery, io: std.Io, path_buf: *[128]u8, file_name: []const u8) ?u64 {
+         const path = std.fmt.bufPrint(path_buf, "/sys/class/power_supply/{s}/{s}", .{ self.battery_name, file_name }) catch return null;
+ 
+         const file = std.Io.Dir.openFileAbsolute(io, path, .{}) catch return null;
+@@ -74,7 +93,7 @@ pub const Battery = struct {
+         const len = file.readStreaming(io, &.{&buf}) catch return null;
+         const value_str = std.mem.trim(u8, buf[0..len], " \n\r\t");
+ 
+-        return std.fmt.parseInt(u8, value_str, 10) catch null;
++        return std.fmt.parseInt(u64, value_str, 10) catch null;
+     }
+ 
+     pub fn interval(self: *Battery) u64 {
+diff --git a/src/bar/blocks/blocks.zig b/src/bar/blocks/blocks.zig
+index 7483ac3..2308a8e 100644
+--- a/src/bar/blocks/blocks.zig
++++ b/src/bar/blocks/blocks.zig
+@@ -15,6 +15,7 @@ pub const Block = struct {
+     cached_len: usize,
+     underline: bool,
+     click: ?config_mod.ClickAction = null,
++    refresh_atom: c_ulong = 0,
+     choice_query: ?Shell = null,
+     choice_buffer: [256]u8 = undefined,
+     last_choice_query: i64 = -1,
+@@ -109,21 +110,22 @@ pub const Block = struct {
+     }
+ 
+     pub fn update(self: *Block, io: std.Io, gpa: std.mem.Allocator) bool {
+-        self.updateChoices(io, gpa);
+         const interval_secs = self.interval();
+-        if (interval_secs == 0) return false;
++        if (interval_secs == 0 and self.refresh_atom == 0) return false;
+ 
+         // .awake (monotonic) for interval bookkeeping, not .real (wall-clock) — std.Io rework gives us a clock enum now, and a wall-clock backstep would stretch intervals.
+         const now = std.Io.Timestamp.now(io, .awake).toSeconds();
+         switch (self.data) {
+             .shell => |*shell| {
+-                const result = shell.collect(now, &self.cached_content);
+-                if (result) |content| self.cached_len = content.len;
+-                if (!shell.running() and (self.last_update == 0 or now - self.last_update >= @as(i64, @intCast(interval_secs)))) {
++                var output: [256]u8 = undefined;
++                const result = shell.collect(now, &output);
++                if (!shell.running() and (self.last_update == 0 or
++                    (interval_secs != 0 and now - self.last_update >= @as(i64, @intCast(interval_secs))))) {
+                     self.last_update = now;
+                     shell.start(gpa, now);
+                 }
+-                return result != null;
++                if (result) |content| return self.cache(content);
++                return false;
+             },
+             else => {},
+         }
+@@ -134,21 +136,28 @@ pub const Block = struct {
+ 
+         self.last_update = now;
+ 
++        var output: [256]u8 = undefined;
+         const result = switch (self.data) {
+-            .static => |*s| s.content(&self.cached_content),
+-            .datetime => |*d| d.content(&self.cached_content),
+-            .ram => |*r| r.content(io, &self.cached_content),
++            .static => |*s| s.content(&output),
++            .datetime => |*d| d.content(&output),
++            .ram => |*r| r.content(io, &output),
+             .shell => unreachable,
+-            .battery => |*b| b.content(io, &self.cached_content),
+-            .cpu_temp => |*c| c.content(io, &self.cached_content),
++            .battery => |*b| b.content(io, &output),
++            .cpu_temp => |*c| c.content(io, &output),
+         };
+ 
+-        self.cached_len = result.len;
++        return self.cache(result);
++    }
++
++    fn cache(self: *Block, content: []const u8) bool {
++        if (std.mem.eql(u8, self.getContent(), content)) return false;
++        @memcpy(self.cached_content[0..content.len], content);
++        self.cached_len = content.len;
+         return true;
+     }
+ 
+-    /// Keep the confirmed choice ready even while its popup is closed.
+-    fn updateChoices(self: *Block, io: std.Io, gpa: std.mem.Allocator) void {
++    /// Query only while this block's choices popup is open.
++    pub fn updateChoices(self: *Block, io: std.Io, gpa: std.mem.Allocator) void {
+         const click = self.click orelse return;
+         const choices = click.choices orelse return;
+         if (self.choice_query == null) self.choice_query = Shell.init("{}", choices.read_command, 1, 0);
+diff --git a/src/bar/slider.zig b/src/bar/slider.zig
+index d48d3b9..8589848 100644
+--- a/src/bar/slider.zig
++++ b/src/bar/slider.zig
+@@ -38,7 +38,6 @@ pub const Slider = struct {
+             config_mod.SliderConfig{ .label = choices.label, .min = 0, .max = @intCast(choices.options.len - 1) }
+         else return null;
+         const height: i32 = if (click.choices) |choices| 40 + @as(i32, @intCast(choices.options.len)) * 32 else 82;
+-        var active_choice: ?usize = null;
+         var initial: i32 = if (click.choices != null) -1 else settings.min;
+         var center = click_x;
+         var accent: c_ulong = bar.scheme_selected.foreground;
+@@ -47,8 +46,7 @@ pub const Slider = struct {
+             center = @divTrunc(block.x_start + block.x_end, 2);
+             accent = block.color();
+             if (click.choices != null) {
+-                active_choice = block.active_choice;
+-                if (active_choice) |index| initial = @intCast(index);
++                block.active_choice = null;
+                 block.last_choice_query = -1;
+             }
+             const content = block.getContent();
+@@ -65,7 +63,7 @@ pub const Slider = struct {
+         const x = std.math.clamp(mon.mon_x + center - @divTrunc(width, 2), mon.mon_x, @max(mon.mon_x, mon.mon_x + mon.mon_w - width - 2));
+         const below = attrs.y + bar.height + 6;
+         const y = if (below + height <= mon.mon_y + mon.mon_h) below else attrs.y - height - 6;
+-        return createWindow(display, screen, x, y, bar, settings, click, initial, active_choice, accent, height);
++        return createWindow(display, screen, x, y, bar, settings, click, initial, null, accent, height);
+     }
+ 
+     fn createWindow(display: *xlib.Display, screen: c_int, x: i32, y: i32, bar: *Bar, settings: config_mod.SliderConfig, click: config_mod.ClickAction, initial: i32, active_choice: ?usize, accent: c_ulong, height: i32) ?Slider {
+diff --git a/src/config/config.zig b/src/config/config.zig
+index 67aa70e..3563f57 100644
+--- a/src/config/config.zig
++++ b/src/config/config.zig
+@@ -186,6 +186,7 @@ pub const Block = struct {
+     block_type: BlockType,
+     format: []const u8,
+     command: ?[]const u8 = null,
++    refresh_property: ?[]const u8 = null,
+     interval: u32,
+     color: u32,
+     underline: bool = true,
+diff --git a/src/config/lua.zig b/src/config/lua.zig
+index b88d27a..a743667 100644
+--- a/src/config/lua.zig
++++ b/src/config/lua.zig
+@@ -881,6 +881,9 @@ fn parseBlockConfig(state: *c.lua_State, idx: c_int) ?Block {
+         c.lua_settop(state, -2);
+     } else if (std.mem.eql(u8, block_type_str, "Shell")) {
+         block.block_type = .shell;
++        _ = c.lua_getfield(state, idx, "refresh_property");
++        block.refresh_property = dupeLuaString(state, -1);
++        c.lua_settop(state, -2);
+         _ = c.lua_getfield(state, idx, "__arg");
+         block.command = dupeLuaString(state, -1);
+         c.lua_settop(state, -2);
+@@ -1041,6 +1044,9 @@ fn createBlockTable(state: *c.lua_State, block_type: [*:0]const u8, arg: ?[]cons
+     _ = c.lua_getfield(state, 1, "format");
+     c.lua_setfield(state, -2, "format");
+ 
++    _ = c.lua_getfield(state, 1, "refresh_property");
++    c.lua_setfield(state, -2, "refresh_property");
++
+     _ = c.lua_getfield(state, 1, "interval");
+     c.lua_setfield(state, -2, "interval");
+ 
+diff --git a/src/wm/handlers.zig b/src/wm/handlers.zig
+index e8d684e..b51cd55 100644
+--- a/src/wm/handlers.zig
++++ b/src/wm/handlers.zig
+@@ -427,6 +427,11 @@ fn handlePropertyNotify(event: *xlib.XPropertyEvent, wm: *WindowManager) void {
+         return;
+     }
+ 
++    if (event.window == wm.display.root) {
++        wm.refreshBarProperty(event.atom);
++        return;
++    }
++
+     if (wm.getSystray()) |tray| {
+         if (tray.handlePropertyNotify(event)) {
+             wm.invalidateBars();
+diff --git a/src/wm/wm.zig b/src/wm/wm.zig
+index a058a26..cb49017 100644
+--- a/src/wm/wm.zig
++++ b/src/wm/wm.zig
+@@ -520,7 +520,14 @@ pub const WindowManager = struct {
+                 if (cfg_block.block_type == .systray) {
+                     bar.setSystrayConfig(cfg_block.underline, cfg_block.color);
+                 } else {
+-                    bar.addBlock(configBlockToBarBlock(cfg_block));
++                    var block = configBlockToBarBlock(cfg_block);
++                    if (cfg_block.refresh_property) |property| {
++                        if (self.allocator.dupeZ(u8, property)) |name| {
++                            defer self.allocator.free(name);
++                            block.refresh_atom = xlib.XInternAtom(self.display.handle, name, xlib.False);
++                        } else |_| {}
++                    }
++                    bar.addBlock(block);
+                 }
+             }
+         } else {
+@@ -735,18 +742,42 @@ pub const WindowManager = struct {
+             fds.clearRetainingCapacity();
+             fds.append(self.allocator, .{ .fd = self.x11_fd, .events = std.posix.POLL.IN, .revents = 0 }) catch break;
+ 
++            var deadline_ms: i64 = std.math.maxInt(i64);
++            var collecting = false;
+             var current_bar = self.bars;
+             while (current_bar) |bar| {
+                 bar.updateBlocks(self.io, self.allocator);
+-                if (self.slider) |*slider| slider.updateChoice(self.display.handle, bar);
++                if (self.slider) |*slider| {
++                    if (slider.bar_window == bar.window and slider.choices != null) {
++                        for (bar.blocks.items) |*block| {
++                            const click = block.click orelse continue;
++                            const choices = click.choices orelse continue;
++                            if (std.mem.eql(u8, click.command, slider.command) and
++                                std.mem.eql(u8, choices.read_command, slider.choices.?.read_command))
++                            {
++                                block.updateChoices(self.io, self.allocator);
++                                break;
++                            }
++                        }
++                        slider.updateChoice(self.display.handle, bar);
++                    }
++                }
+                 bar.draw(self.display.handle, self.config);
+                 for (bar.blocks.items) |*block| {
++                    const interval = block.interval();
++                    const waiting = block.data == .shell and block.data.shell.running();
++                    if (interval != 0 and !waiting) {
++                        deadline_ms = @min(deadline_ms, (block.last_update + @as(i64, @intCast(interval))) * 1000);
++                    }
+                     if (block.choice_query) |query| if (query.fd) |fd| {
+                         fds.append(self.allocator, .{ .fd = fd, .events = std.posix.POLL.IN, .revents = 0 }) catch {};
+                     };
+                     switch (block.data) {
+-                        .shell => |*shell| if (shell.fd) |fd| {
+-                            fds.append(self.allocator, .{ .fd = fd, .events = std.posix.POLL.IN, .revents = 0 }) catch {};
++                        .shell => |*shell| {
++                            collecting = collecting or shell.running();
++                            if (shell.fd) |fd| {
++                                fds.append(self.allocator, .{ .fd = fd, .events = std.posix.POLL.IN, .revents = 0 }) catch {};
++                            }
+                         },
+                         else => {},
+                     }
+@@ -754,13 +785,48 @@ pub const WindowManager = struct {
+                 current_bar = bar.next;
+             }
+ 
+-            const poll_timeout: i32 = if (self.scroll_animation.isActive()) 16 else 1000;
++            // XSync during drawing can put events in Xlib's queue without
++            // leaving the X connection readable.
++            if (xlib.XPending(self.display.handle) != 0) continue;
++
++            if (self.scroll_animation.isActive() or collecting or
++                (self.slider != null and self.slider.?.choices != null))
++            {
++                const now = std.Io.Timestamp.now(self.io, .awake).toMilliseconds();
++                const limit: i64 = if (self.scroll_animation.isActive()) 16 else 1000;
++                deadline_ms = @min(deadline_ms, now + limit);
++            }
++            const poll_timeout: i32 = if (deadline_ms == std.math.maxInt(i64)) -1 else blk: {
++                const now = std.Io.Timestamp.now(self.io, .awake).toMilliseconds();
++                break :blk @intCast(std.math.clamp(deadline_ms - now, 0, std.math.maxInt(i32)));
++            };
+             _ = std.posix.poll(fds.items, poll_timeout) catch 0;
+         }
+     }
+ 
++    pub fn refreshBarProperty(self: *WindowManager, atom: xlib.Atom) void {
++        var current_bar = self.bars;
++        while (current_bar) |bar| : (current_bar = bar.next) {
++            for (bar.blocks.items) |*block| {
++                if (block.refresh_atom == atom) block.last_update = 0;
++            }
++        }
++    }
++
+     pub fn closeSlider(self: *WindowManager) void {
+-        if (self.slider) |*slider| slider.deinit(self.display.handle);
++        if (self.slider) |*slider| {
++            var current_bar = self.bars;
++            while (current_bar) |bar| : (current_bar = bar.next) {
++                if (slider.bar_window != bar.window) continue;
++                for (bar.blocks.items) |*block| {
++                    if (block.choice_query) |*query| query.deinit();
++                    block.choice_query = null;
++                    block.active_choice = null;
++                }
++                break;
++            }
++            slider.deinit(self.display.handle);
++        }
+         self.slider = null;
+     }
+ 
+diff --git a/src/x11/display.zig b/src/x11/display.zig
+index 2f922be..004e9d5 100644
+--- a/src/x11/display.zig
++++ b/src/x11/display.zig
+@@ -35,7 +35,7 @@ pub const Display = struct {
+         _ = xlib.XSelectInput(
+             self.handle,
+             self.root,
+-            xlib.SubstructureRedirectMask | xlib.SubstructureNotifyMask | xlib.StructureNotifyMask | xlib.ButtonPressMask | xlib.PointerMotionMask | xlib.EnterWindowMask,
++            xlib.SubstructureRedirectMask | xlib.SubstructureNotifyMask | xlib.StructureNotifyMask | xlib.ButtonPressMask | xlib.PointerMotionMask | xlib.EnterWindowMask | xlib.PropertyChangeMask,
+         );
+         _ = xlib.XSync(self.handle, xlib.False);
+ 

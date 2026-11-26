@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -o pipefail
+shopt -s lastpipe
+refresh() {
+  xprop -root -f _MINARCH_VOLUME 8s -set _MINARCH_VOLUME refresh >/dev/null
+}
+
+# A PulseAudio subscription blocks until PipeWire emits an event.
+# Ignore source and stream changes because the bar shows the default sink.
+LC_ALL=C pactl subscribe | {
+  refresh
+  while IFS= read -r event; do
+    case $event in
+      "Event "*" on sink #"*|"Event "*" on server #"*) refresh ;;
+    esac
+  done
+}

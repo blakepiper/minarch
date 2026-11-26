@@ -1,0 +1,11 @@
+[Unit]
+Description=Minarch DDC/CI brightness control
+PartOf=minarch-session.target
+ConditionEnvironment=MINARCH_BRIGHTNESS=ddc
+
+[Service]
+ExecStart=%h/.local/bin/minarch-monitor-brightness serve
+RuntimeDirectory=minarch-monitor-brightness
+RuntimeDirectoryMode=0700
+Restart=on-failure
+RestartSec=2

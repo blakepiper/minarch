@@ -1,9 +1,0 @@
-#!/bin/sh
-# Launch the Minarch editor layout in an optional project directory.
-set -eu
-if [ "$#" -gt 0 ] && [ -d "$1" ]; then
-    cd -- "$1"
-    shift
-fi
-export MINARCH_NVIMIDE=1
-exec nvim "$@"

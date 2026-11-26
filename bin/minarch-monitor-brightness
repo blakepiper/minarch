@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+exec python3 -B "${XDG_DATA_HOME:-$HOME/.local/share}/minarch/blix-settings/monitor-brightness.py" ddcutil "$@"

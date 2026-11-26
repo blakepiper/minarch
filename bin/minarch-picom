@@ -1,3 +1,8 @@
 #!/usr/bin/env bash
 # Resolve the same configuration directory used by the installer.
-exec picom --config "${XDG_CONFIG_HOME:-$HOME/.config}/picom/picom.conf" "$@"
+config=${XDG_CONFIG_HOME:-$HOME/.config}/picom/picom.conf
+if grep -Fq '# @minarch-opacity-override@' "$config" &&
+  generated=$(blix-settings-apply prepare-picom); then
+  config=$generated
+fi
+exec picom --config "$config" "$@"

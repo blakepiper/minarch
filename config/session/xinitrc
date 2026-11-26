@@ -16,12 +16,12 @@ export CM_OWN_CLIPBOARD=0
 export MINARCH_BATTERY=''
 for battery in /sys/class/power_supply/*; do
   [[ -r $battery/type ]] || continue
+  [[ ! -r $battery/scope || $(<"$battery/scope") != Device ]] || continue
   if [[ $(cat "$battery/type") == Battery ]]; then
     MINARCH_BATTERY=$(basename "$battery")
     break
   fi
 done
-xsetroot -solid '#1a1b26'
 xset r rate 200 50
 # Set the mirrored monitor before OXWM sees Xinerama geometry. Reapply the
 # external keyboard map after Xorg has created both keyboard interfaces.
@@ -39,8 +39,22 @@ export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 export XDG_DATA_HOME=${XDG_DATA_HOME:-$HOME/.local/share}
 export XDG_STATE_HOME=${XDG_STATE_HOME:-$HOME/.local/state}
 export XDG_CACHE_HOME=${XDG_CACHE_HOME:-$HOME/.cache}
+export MINARCH_BRIGHTNESS='' MINARCH_POWER_PROFILES=''
+if command -v brightnessctl >/dev/null && compgen -G '/sys/class/backlight/*/brightness' >/dev/null; then
+  MINARCH_BRIGHTNESS=backlight
+elif command -v ddcutil >/dev/null; then
+  for bus in /dev/i2c-*; do
+    [[ -r $bus && -w $bus ]] || continue
+    MINARCH_BRIGHTNESS=ddc
+    break
+  done
+fi
+if command -v blix-settings-apply >/dev/null; then
+  MINARCH_POWER_PROFILES=$(blix-settings-apply power-modes 2>/dev/null) || MINARCH_POWER_PROFILES=''
+  blix-settings-apply apply-session
+fi
 systemctl --user import-environment DISPLAY XAUTHORITY PATH XDG_CURRENT_DESKTOP XDG_SESSION_TYPE XDG_SESSION_ID \
-  XDG_CONFIG_HOME XDG_DATA_HOME XDG_STATE_HOME XDG_CACHE_HOME
+  XDG_CONFIG_HOME XDG_DATA_HOME XDG_STATE_HOME XDG_CACHE_HOME MINARCH_BRIGHTNESS MINARCH_POWER_PROFILES
 systemctl --user daemon-reload
 systemctl --user start minarch-session.target || {
   echo 'Unable to start session locking/services; see journalctl --user.' >&2

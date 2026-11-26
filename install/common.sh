@@ -4,7 +4,7 @@ log() { printf '\n==> %s\n' "$*"; }
 die() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 read_manifest() { sed 's/#.*//; /^[[:space:]]*$/d' "$1"; }
 
-# Whole directories (notably nvim) are managed as a unit, including dotfiles.
+# Whole directories are managed as a unit, including dotfiles.
 # Scope is user or system; system operations use sudo, never run makepkg as root.
 install_config() {
   local source=$1 target=$2 scope=${3:-user} parent stage backup
