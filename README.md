@@ -355,7 +355,7 @@ add no idle process merely by being installed.
 
 | Package built locally | Source and purpose |
 | --- | --- |
-| oxwm-git | Pinned AUR recipe/source; Zig window manager with microphone keysym and mirrored-screen patches |
+| oxwm-git | Pinned AUR recipe/source; Zig window manager with Minarch compatibility patches |
 | blesh-git | Pinned AUR recipe plus ble.sh/contrib source commits; interactive Bash editing |
 | st-minarch | Local recipe for st 0.9.3, scrollback/URL patch and Bash/ble.sh startup |
 
@@ -365,7 +365,7 @@ include libraries for other graphical platforms without enabling those platforms
 `xdotool` comes through clipmenu and supplies the confirmed logout action.
 Arch's ncurses owns st terminfo; the local recipe does not overwrite it.
 
-OXWM's source/recipe pins are in the AUR manifest. Its two patches are in
+OXWM's source/recipe pins are in the AUR manifest. Its patches are in
 [config/oxwm-patches](config/oxwm-patches). The ble.sh contrib pin is recorded in
 [install/packages.sh](install/packages.sh). The st recipe records the upstream
 tarball SHA-256. Build caching includes recipe/source/config identity and the
