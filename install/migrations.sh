@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 upgrade_shipped_file() {
-  local source=$1 target=$2 previous_hash=$3 actual
+  local source=$1 target=$2 previous_hash=$3 scope=${4:-user} actual
   [[ -f $target && ! -L $target ]] || return 0
   actual=$(sha256sum < "$target")
   [[ ${actual%% *} == "$previous_hash" ]] || return 0
   local REPLACE_CONFIG=true
-  install_config "$source" "$target"
+  install_config "$source" "$target" "$scope"
 }
 
 # Retire only explicitly listed, checksum-matched regular files. User edits,

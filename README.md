@@ -225,6 +225,8 @@ free to install other extensions.
 ### Apply and verify
 
 For an existing installation, the installer preserves differing policy files.
+When you rerun it, known unchanged Minarch policy and X session files are backed
+up and upgraded automatically; edited or unknown versions remain preserved.
 To apply only these Firefox changes, back up the installed policy file if present,
 then install the new one:
 

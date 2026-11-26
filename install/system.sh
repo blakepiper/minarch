@@ -32,6 +32,14 @@ install_system() {
   install_config "$ROOT/etc/udev/rules.d/99-minarch-mouse.rules" /etc/udev/rules.d/99-minarch-mouse.rules system
   sudo udevadm control --reload
   # Input rules apply on next boot/replug; do not disrupt a live input session.
+  if [[ ${REPLACE_CONFIG:-false} != true ]]; then
+    upgrade_shipped_file "$ROOT/etc/firefox/policies/policies.json" \
+      /etc/firefox/policies/policies.json \
+      3fb0f78cac6f0e95e7faf679d17dd233f72382b0533bf08ee2e7382a89762dcc system
+    upgrade_shipped_file "$ROOT/etc/firefox/policies/policies.json" \
+      /etc/firefox/policies/policies.json \
+      8090e11ae73dc9ee1369731db123c73392cbc30c258d469b74b1b01ed73460cf system
+  fi
   install_config "$ROOT/etc/firefox/policies/policies.json" /etc/firefox/policies/policies.json system
   install_config "$ROOT/etc/fonts/conf.d/52-minarch-fonts.conf" /etc/fonts/conf.d/52-minarch-fonts.conf system
   install_config "$ROOT/etc/systemd/system-sleep/minarch-unlock" /usr/lib/systemd/system-sleep/minarch-unlock system

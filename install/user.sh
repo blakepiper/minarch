@@ -11,6 +11,8 @@ install_user() {
       08249da07775ece4975c5bfba6dc780659f29262fd85ad4c978e9795ea79d92b
     upgrade_shipped_file "$ROOT/bin/minarch-hardware-hotplug" "$HOME/.local/bin/minarch-hardware-hotplug" \
       e8d7cd46dd856cb0f76b04ea15f68f21a9b95ce66aeeb1ddee0b34522198b3fe
+    upgrade_shipped_file "$ROOT/config/session/xinitrc" "$HOME/.xinitrc" \
+      b7065b3496a77143025bdbe980b03df09345042d0a735cc8e298776ed0308e7c
     upgrade_shipped_file "$ROOT/config/bash/bashrc" "$HOME/.bashrc" \
       faf4c79b4d19f1a2625b1610b36efa62965b4e2a1a50add05db55c36c1742583
   fi
