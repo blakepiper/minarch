@@ -39,6 +39,9 @@ install_system() {
     upgrade_shipped_file "$ROOT/etc/firefox/policies/policies.json" \
       /etc/firefox/policies/policies.json \
       8090e11ae73dc9ee1369731db123c73392cbc30c258d469b74b1b01ed73460cf system
+    upgrade_shipped_file "$ROOT/etc/firefox/policies/policies.json" \
+      /etc/firefox/policies/policies.json \
+      d1a6f0a68b3b2f9a7a934980940ec084c92812b47fd5d902327dc525c74a926b system
   fi
   install_config "$ROOT/etc/firefox/policies/policies.json" /etc/firefox/policies/policies.json system
   install_config "$ROOT/etc/fonts/conf.d/52-minarch-fonts.conf" /etc/fonts/conf.d/52-minarch-fonts.conf system

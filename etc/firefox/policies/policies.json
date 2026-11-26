@@ -77,6 +77,15 @@
       "widget.disable-swipe-tracker": {
         "Value": false,
         "Status": "locked"
+      },
+      "extensions.activeThemeID": {
+        "Value": "firefox-compact-dark@mozilla.org",
+        "Status": "user"
+      },
+      "layout.css.prefers-color-scheme.content-override": {
+        "Value": 0,
+        "Status": "user",
+        "Type": "number"
       }
     },
     "AIControls": {

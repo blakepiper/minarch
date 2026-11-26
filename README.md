@@ -193,13 +193,16 @@ machine after a full browser restart.
   extension recommendations, and feature promotions disabled.
 - Firefox Home content is disabled, the homepage and startup page are blank, and
   new tabs open to a blank page.
+- Firefox's built-in Dark theme is the default, and websites that support it
+  receive a dark color-scheme preference.
 - DuckDuckGo is the default search engine; horizontal swipe gestures navigate
   backward and forward through page history. X11 touchpad swipe input is enabled
   through XInput2 and Firefox's swipe tracker.
 - DNS prediction, link prefetching, and speculative connections disabled.
 - Firefox AI features blocked by the existing AIControls policy.
 
-Tracking protection and HTTPS-only mode remain adjustable for site compatibility.
+Tracking protection, HTTPS-only mode, the Firefox theme, and website appearance
+remain user-adjustable.
 Global Privacy Control and tracking-query stripping are also user-adjustable.
 Telemetry/prediction preferences, Home/Suggest settings, and promotion settings
 are locked. This configuration preserves password saving, form history,
