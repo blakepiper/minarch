@@ -1,12 +1,23 @@
 {
   "policies": {
     "FirefoxHome": {
+      "Search": false,
+      "TopSites": false,
       "SponsoredTopSites": false,
+      "Pocket": false,
       "Stories": false,
+      "SponsoredPocket": false,
       "SponsoredStories": false,
+      "Snippets": false,
       "Highlights": false,
       "Locked": true
     },
+    "Homepage": {
+      "URL": "about:blank",
+      "Locked": true,
+      "StartPage": "none"
+    },
+    "NewTabPage": false,
     "FirefoxSuggest": {
       "SponsoredSuggestions": false,
       "WebSuggestions": false,
@@ -54,6 +65,14 @@
       "browser.discovery.enabled": {
         "Value": false,
         "Status": "locked"
+      },
+      "browser.gesture.swipe.left": {
+        "Value": "Browser:BackOrBackDuplicate",
+        "Status": "locked"
+      },
+      "browser.gesture.swipe.right": {
+        "Value": "Browser:ForwardOrForwardDuplicate",
+        "Status": "locked"
       }
     },
     "AIControls": {
@@ -67,6 +86,9 @@
     "DisableRemoteImprovements": true,
     "NetworkPrediction": false,
     "SearchSuggestEnabled": false,
+    "SearchEngines": {
+      "Default": "DuckDuckGo"
+    },
     "HttpsOnlyMode": "enabled",
     "UserMessaging": {
       "ExtensionRecommendations": false,

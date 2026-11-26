@@ -191,6 +191,10 @@ machine after a full browser restart.
   pending crash-report submission disabled.
 - Search suggestions, Firefox Suggest, sponsored Home content, personalized
   extension recommendations, and feature promotions disabled.
+- Firefox Home content is disabled, the homepage and startup page are blank, and
+  new tabs open to a blank page.
+- DuckDuckGo is the default search engine; horizontal swipe gestures navigate
+  backward and forward through page history.
 - DNS prediction, link prefetching, and speculative connections disabled.
 - Firefox AI features blocked by the existing AIControls policy.
 
