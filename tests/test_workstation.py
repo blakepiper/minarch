@@ -153,6 +153,21 @@ class ConfigSafety(Sandbox):
         self.assertEqual(backup.stat().st_mode & 0o777, 0o644)
         self.assertIn("Unchanged:", self.install(source, target, replace=True).stdout)
 
+    def test_upgrade_stock_oxwm_config_preserves_custom_files(self):
+        target = self.home / ".config/oxwm/config.lua"
+        target.parent.mkdir(parents=True)
+        current = (ROOT / "config/oxwm/config.lua").read_text()
+        previous = "".join(line for line in current.splitlines(keepends=True)
+                           if line.strip() != "underline = true,")
+        target.write_text(previous)
+        custom = target.with_name("custom.lua")
+        custom.write_text("-- user file\n")
+        run([str(ROOT / "install.sh"), "--config-only"], env=self.env)
+        self.assertEqual(target.read_text(), current)
+        self.assertEqual(custom.read_text(), "-- user file\n")
+        backup = next(target.parent.glob("config.lua.backup.*/original"))
+        self.assertEqual(backup.read_text(), previous)
+
     def test_complete_user_seed(self):
         data_home = self.home / "data with spaces"
         self.env["XDG_DATA_HOME"] = str(data_home)
