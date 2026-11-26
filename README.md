@@ -204,19 +204,18 @@ certificate checks, extension signature checks, and normal security updates. It 
 ### Extensions
 
 uBlock Origin remains supplied by Arch's `firefox-ublock-origin` package.
-The two requested extensions are installed at browser startup via Mozilla's
-`ExtensionSettings` policy using `normal_installed`; users can disable them.
-Their settings remain configurable through the extension UI.
+Firefox installs Enhancer for YouTube at startup through Mozilla's
+`ExtensionSettings` policy using `normal_installed`. Users can disable it
+or configure it through the extension UI.
 
 | Extension | Verified add-on ID | Source |
 | --- | --- | --- |
-| Dark Reader | `addon@darkreader.org` | [Mozilla Add-ons](https://addons.mozilla.org/firefox/addon/darkreader/) |
 | Enhancer for YouTube | `enhancerforyoutube@maximerf.addons.mozilla.org` | [Mozilla Add-ons](https://addons.mozilla.org/firefox/addon/enhancer-for-youtube/) |
 
 Firefox downloads the latest compatible signed extension from Mozilla Add-ons;
 initial installation requires network access. Updates follow the add-ons' normal
-update channel. These extensions are not vendored or pinned to a particular
-version. No wildcard extension blocklist is imposed.
+update channel. Minarch uses the current compatible release and leaves users
+free to install other extensions.
 
 ### Apply and verify
 
@@ -335,7 +334,7 @@ add no idle process merely by being installed.
 | Login | greetd, greetd-tuigreet | Password prompt and automatic X session launch after login |
 | X configuration/inspection | xorg-xset, xorg-setxkbmap, xorg-xkbcomp, xorg-xrandr, xorg-xprop, xorg-xdpyinfo | Keyboard remapping, display setup, DPMS, and inspection; xdpyinfo is also used by startx |
 | URL/MIME opening | xdg-utils | Browser authentication links and MIME defaults without a DE |
-| Browser | firefox, firefox-ublock-origin | Privacy policies; packaged uBlock Origin; Dark Reader and Enhancer for YouTube installed through Mozilla Add-ons |
+| Browser | firefox, firefox-ublock-origin | Privacy policies, packaged uBlock Origin, and Enhancer for YouTube from Mozilla Add-ons |
 | Launcher/media | rofi, dmenu, mpv, feh | On-demand application search, command prompts, playback and image viewing |
 | File manager | thunar | Opens on demand from Alt+F or a folder link |
 | Notifications | dunst, libnotify | D-Bus activates Dunst when a notification is sent |

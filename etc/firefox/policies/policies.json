@@ -76,10 +76,6 @@
       "Locked": true
     },
     "ExtensionSettings": {
-      "addon@darkreader.org": {
-        "installation_mode": "normal_installed",
-        "install_url": "https://addons.mozilla.org/firefox/downloads/latest/addon@darkreader.org/latest.xpi"
-      },
       "enhancerforyoutube@maximerf.addons.mozilla.org": {
         "installation_mode": "normal_installed",
         "install_url": "https://addons.mozilla.org/firefox/downloads/latest/enhancerforyoutube@maximerf.addons.mozilla.org/latest.xpi"

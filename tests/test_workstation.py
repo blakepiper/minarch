@@ -610,8 +610,7 @@ class RepositoryPolicy(unittest.TestCase):
         self.assertFalse(policies["NetworkPrediction"])
         self.assertEqual(policies["HttpsOnlyMode"], "enabled")
         extensions = policies["ExtensionSettings"]
-        self.assertEqual(set(extensions), {"addon@darkreader.org",
-                         "enhancerforyoutube@maximerf.addons.mozilla.org"})
+        self.assertEqual(set(extensions), {"enhancerforyoutube@maximerf.addons.mozilla.org"})
         for guid, settings in extensions.items():
             self.assertEqual(settings["installation_mode"], "normal_installed")
             self.assertEqual(settings["install_url"],
