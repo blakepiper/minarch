@@ -10,6 +10,8 @@ install_system() {
   # Input rules apply on next boot/replug; do not disrupt a live input session.
   install_config "$ROOT/etc/firefox/policies/policies.json" /etc/firefox/policies/policies.json system
   install_config "$ROOT/etc/fonts/conf.d/52-minarch-fonts.conf" /etc/fonts/conf.d/52-minarch-fonts.conf system
+  # Keep manual pages available without periodic index maintenance.
+  sudo systemctl mask --now man-db.timer
   # Only enable periodic discard if a device advertises discard support.
   if lsblk -dnbo DISC-MAX | awk '$1+0 > 0 {found=1} END {exit !found}'; then
     sudo systemctl enable --now fstrim.timer

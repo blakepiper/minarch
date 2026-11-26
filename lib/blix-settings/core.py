@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import re
 import select
+import shlex
 import shutil
 import signal
 import subprocess
@@ -114,7 +115,6 @@ def defaults(path=None):
             "capabilities": {
                 "hasBacklight": any(Path("/sys/class/backlight").glob("*/brightness")),
                 "hasMonitorBrightness": os.environ.get("MINARCH_BRIGHTNESS") == "ddc",
-                "hasPowerProfiles": bool(os.environ.get("MINARCH_POWER_PROFILES")),
             },
             "lockCommand": "minarch-lock",
             "shortcutsFile": str(xdg / "oxwm/config.lua"),
@@ -134,8 +134,9 @@ def run_nightlight():
     value = nightlight_settings()
     if value["enabled"]:
         temperature = 6500 - value["intensity"] * 40
-        os.execvp(TOOLS["gammastep"], [TOOLS["gammastep"], "-m", "randr", "-l", "0:0",
-                                    "-t", f"{temperature}:{temperature}", "-P", "-r"])
+        command("gammastep", "-m", "randr", "-P", "-O", temperature)
+    else:
+        command("gammastep", "-m", "randr", "-x")
 
 
 def set_nightlight(enabled, intensity, preferences=None):
@@ -145,14 +146,22 @@ def set_nightlight(enabled, intensity, preferences=None):
     previous = nightlight_settings(preferences)
     preferences.update("nightlight", {"enabled": enabled, "intensity": intensity})
     try:
-        command("systemctl", "--user", "restart", "minarch-nightlight.service")
+        command("systemctl", "--user", "reload-or-restart", "minarch-nightlight.service")
     except SettingsError:
         preferences.update("nightlight", previous)
         try:
-            command("systemctl", "--user", "restart", "minarch-nightlight.service")
+            command("systemctl", "--user", "reload-or-restart", "minarch-nightlight.service")
         except SettingsError:
             pass
         raise
+
+
+def restore_nightlight_after_layout_change():
+    try:
+        if nightlight_settings()["enabled"]:
+            command("systemctl", "--user", "reload", "minarch-nightlight.service")
+    except SettingsError as error:
+        print(error, file=sys.stderr)
 
 
 def transparency_enabled(preferences=None):
@@ -291,12 +300,10 @@ def input_state():
 
 def power_state():
     state = {"batteries": batteries(), "blank_seconds": session_state()["blank_seconds"]}
-    state["power_profiles"] = {"available": False}
-    if defaults().get("capabilities", {}).get("hasPowerProfiles", False):
-        try:
-            state["power_profiles"] = power_profiles()
-        except SettingsError as error:
-            state["power_profiles"]["error"] = str(error)
+    try:
+        state["power_profiles"] = power_profiles()
+    except SettingsError:
+        state["power_profiles"] = {"available": False}
     return state
 
 
@@ -503,6 +510,7 @@ def preview_display(request, input_stream=sys.stdin, output_stream=sys.stdout, s
         kept = False
         try:
             command("xrandr", *display_args(plan))
+            restore_nightlight_after_layout_change()
             deadline = time.monotonic() + seconds
             print(json.dumps({"ready": True, "seconds": seconds}), file=output_stream, flush=True)
             ready, _, _ = select.select([input_stream], [], [], max(0, deadline - time.monotonic()))
@@ -515,6 +523,7 @@ def preview_display(request, input_stream=sys.stdin, output_stream=sys.stdout, s
             try:
                 if not kept:
                     restore_display(previous)
+                    restore_nightlight_after_layout_change()
             finally:
                 marker.unlink(missing_ok=True)
         print(json.dumps({"kept": kept}), file=output_stream, flush=True)
@@ -669,7 +678,7 @@ def apply_session_preferences():
     apply_input_preferences()
 
     profile = saved.get("power_mode")
-    if profile is not None and defaults().get("capabilities", {}).get("hasPowerProfiles", False):
+    if profile is not None:
         try:
             set_power_profile(profile, persist=False)
         except SettingsError as error:
@@ -761,7 +770,8 @@ def shortcut_reference(path=None):
         "layout.cycle": "Cycle layouts", "quit": "Log out", "spawn_terminal": "Terminal",
         "set_master_factor": "Adjust layout split", "inc_num_master": "Change master window count",
     }
-    launchers = {"dmenu_run": "Application launcher", "firefox": "Firefox", "xfe": "File manager",
+    launchers = {"dmenu_run": "Run command", "rofi": "Search applications", "firefox": "Firefox",
+                 "thunar": "File manager", "xfe": "File manager",
                  "blix-settings": "Blix Settings", "minarch-lock": "Lock screen", "clipboard-history": "Clipboard history",
                  "control-menu": "Session controls", "minarch-brightness": "Adjust brightness"}
     special = {"XF86AudioRaiseVolume": "Volume up", "XF86AudioLowerVolume": "Volume down",
@@ -781,8 +791,15 @@ def shortcut_reference(path=None):
         title = special.get(key, actions.get(name, "Custom action"))
         launched = re.search(r'oxwm\.spawn\("([^"]+)"\)', action)
         if launched and key not in special:
-            command_name = Path(launched[1].split()[0]).name.strip("@")
-            title = launchers.get(command_name, command_name.replace("-", " ").title())
+            try:
+                argv = shlex.split(launched[1])
+            except ValueError:
+                argv = []
+            if argv and argv[0] == "minarch-notify-failure":
+                argv = argv[2:]
+            command_name = Path(argv[0]).name.strip("@") if argv else ""
+            if command_name:
+                title = launchers.get(command_name, command_name.replace("-", " ").title())
             if command_name == "screenshot-region":
                 title = "Full screenshot" if "--full" in launched[1] else "Window screenshot" if "--window" in launched[1] else "Region screenshot"
         if name == "layout.set":

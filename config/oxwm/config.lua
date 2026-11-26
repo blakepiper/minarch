@@ -1,6 +1,6 @@
 -- Verified against tonybanters/oxwm fc4ada9ac4ee8e34ace203290a2b14d10e4671cc.
 -- Lua actions are native OXWM operations; arrows mean stack/monitor order.
-local mod = "Mod4"
+local mod = "Mod1"
 oxwm.set_terminal("st")
 oxwm.set_modkey(mod)
 oxwm.set_tags({ "1", "2", "3", "4", "5", "6", "7", "8", "9" })
@@ -17,13 +17,6 @@ oxwm.set_attach_method("bottom")
 -- OXWM requires a color for custom status blocks. Use its default bar foreground.
 local block_foreground = 0xbbbbbb
 local blocks = {}
-local power_labels = { performance = "Performance", balanced = "Balanced", ["power-saver"] = "Power Saver" }
-local power_modes = {}
-for profile in (os.getenv("MINARCH_POWER_PROFILES") or ""):gmatch("%S+") do
-  if power_labels[profile] then
-    table.insert(power_modes, { label = power_labels[profile], value = profile })
-  end
-end
 -- The X session detects the battery name once.
 local battery = os.getenv("MINARCH_BATTERY")
 if battery and battery:match("^[%w_%-]+$") then
@@ -39,14 +32,7 @@ if battery and battery:match("^[%w_%-]+$") then
         full = "Bat {}% full",
         interval = 30,
         color = block_foreground,
-        click = #power_modes > 0 and {
-          command = "blix-settings-apply power-mode {}",
-          choices = {
-            label = "Power mode",
-            read_command = "blix-settings-apply power-mode",
-            options = power_modes,
-          },
-        } or nil,
+        click = "blix-settings-apply power-menu",
       }))
     end
   end
@@ -88,9 +74,9 @@ oxwm.bar.set_blocks(blocks)
 -- All OXWM bindings live in this file. OXWM reload/restart is intentionally
 -- not bound to any key; edit this file and restart OXWM from a shell when
 -- changing bindings.
-oxwm.key.bind({ mod }, "Space", oxwm.spawn("dmenu_run"))
+oxwm.key.bind({ mod }, "Space", oxwm.spawn("rofi -show drun -show-icons -display-drun Apps -terminal st"))
 oxwm.key.bind({ mod }, "D", oxwm.spawn("dmenu_run"))
-oxwm.key.bind({ mod }, "F", oxwm.spawn("xfe"))
+oxwm.key.bind({ mod }, "F", oxwm.spawn("thunar"))
 oxwm.key.bind({ mod }, "B", oxwm.spawn("firefox"))
 oxwm.key.bind({ mod }, "S", oxwm.spawn("blix-settings"))
 oxwm.key.bind({ mod }, "P", oxwm.client.toggle_floating())
@@ -123,21 +109,21 @@ oxwm.key.bind({ mod }, "N", oxwm.layout.cycle())
 -- The control menu sends this native quit binding after confirmation. OXWM
 -- currently has no external quit IPC. No window geometry is simulated.
 oxwm.key.bind({ mod, "Shift" }, "Q", oxwm.quit())
-oxwm.key.bind({ mod, "Shift" }, "S", oxwm.spawn("screenshot-region"))
-oxwm.key.bind({}, "Print", oxwm.spawn("screenshot-region --full"))
-oxwm.key.bind({ "Mod1" }, "Print", oxwm.spawn("screenshot-region --window"))
-oxwm.key.bind({ mod }, "V", oxwm.spawn("clipboard-history"))
-oxwm.key.bind({ mod }, "L", oxwm.spawn("minarch-lock"))
-oxwm.key.bind({ mod, "Shift" }, "Space", oxwm.spawn("control-menu"))
-oxwm.key.bind({}, "XF86AudioRaiseVolume", oxwm.spawn("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"))
-oxwm.key.bind({}, "XF86AudioLowerVolume", oxwm.spawn("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"))
-oxwm.key.bind({}, "XF86AudioMute", oxwm.spawn("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"))
-oxwm.key.bind({}, "XF86AudioMicMute", oxwm.spawn("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"))
-oxwm.key.bind({}, "XF86AudioPlay", oxwm.spawn("playerctl play-pause"))
-oxwm.key.bind({}, "XF86AudioNext", oxwm.spawn("playerctl next"))
-oxwm.key.bind({}, "XF86AudioPrev", oxwm.spawn("playerctl previous"))
-oxwm.key.bind({}, "XF86MonBrightnessUp", oxwm.spawn("minarch-brightness up"))
-oxwm.key.bind({}, "XF86MonBrightnessDown", oxwm.spawn("minarch-brightness down"))
+oxwm.key.bind({ mod, "Shift" }, "S", oxwm.spawn("minarch-notify-failure 'Screenshot failed' screenshot-region"))
+oxwm.key.bind({}, "Print", oxwm.spawn("minarch-notify-failure 'Screenshot failed' screenshot-region --full"))
+oxwm.key.bind({ "Mod1" }, "Print", oxwm.spawn("minarch-notify-failure 'Screenshot failed' screenshot-region --window"))
+oxwm.key.bind({ mod }, "V", oxwm.spawn("minarch-notify-failure 'Clipboard history unavailable' clipboard-history"))
+oxwm.key.bind({ mod }, "L", oxwm.spawn("minarch-notify-failure 'Could not lock screen' minarch-lock"))
+oxwm.key.bind({ mod, "Shift" }, "Space", oxwm.spawn("minarch-notify-failure 'Session action failed' control-menu"))
+oxwm.key.bind({}, "XF86AudioRaiseVolume", oxwm.spawn("minarch-notify-failure 'Volume change failed' wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"))
+oxwm.key.bind({}, "XF86AudioLowerVolume", oxwm.spawn("minarch-notify-failure 'Volume change failed' wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"))
+oxwm.key.bind({}, "XF86AudioMute", oxwm.spawn("minarch-notify-failure 'Mute change failed' wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"))
+oxwm.key.bind({}, "XF86AudioMicMute", oxwm.spawn("minarch-notify-failure 'Microphone mute change failed' wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"))
+oxwm.key.bind({}, "XF86AudioPlay", oxwm.spawn("minarch-notify-failure 'Playback control failed' playerctl play-pause"))
+oxwm.key.bind({}, "XF86AudioNext", oxwm.spawn("minarch-notify-failure 'Next track failed' playerctl next"))
+oxwm.key.bind({}, "XF86AudioPrev", oxwm.spawn("minarch-notify-failure 'Previous track failed' playerctl previous"))
+oxwm.key.bind({}, "XF86MonBrightnessUp", oxwm.spawn("minarch-notify-failure 'Brightness change failed' minarch-brightness up"))
+oxwm.key.bind({}, "XF86MonBrightnessDown", oxwm.spawn("minarch-notify-failure 'Brightness change failed' minarch-brightness down"))
 
 -- Core terminal/window bindings.
 oxwm.key.bind({ mod }, "Return", oxwm.spawn_terminal())

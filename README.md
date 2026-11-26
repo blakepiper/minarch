@@ -72,10 +72,11 @@ the user service environment. Picom's launcher resolves its config there too.
 OXWM starts each workspace in dwindle layout with upstream gaps, borders, and
 bar styling. Click **Vol** for the volume slider or **Bri** for the brightness
 slider on systems with a panel backlight or an accessible DDC/CI monitor.
-Click **Bat** on a laptop to select a mode offered by its power-profile service.
+Click **Bat** on a laptop to query its power-profile service and select an
+available mode in dmenu.
 The bar also shows the date and time and a battery runtime estimate when available.
 
-**Super+S** opens or focuses Blix Settings. Its GTK interface includes display,
+**Alt+S** opens or focuses Blix Settings. Its GTK interface includes display,
 audio, network, Bluetooth, power, input, and shortcuts. Network and Bluetooth
 controls use existing NetworkManager and BlueZ services when available. For
 external brightness, enable DDC/CI on the monitor. The slider controls the
@@ -85,42 +86,43 @@ The controls and GTK app are adapted from [Blix](https://github.com/blakepiper/b
 Edit `~/.config/oxwm/config.lua` and restart OXWM or the X session to apply
 changes. There is no reload binding.
 
-Super means Mod4 and Alt means Mod1. The source of truth is
+Alt (Mod1) is the main shortcut modifier. The bindings are defined in
 [config/oxwm/config.lua](config/oxwm/config.lua).
 
 | Keys | Result |
 | --- | --- |
-| Super+Enter | Launch st |
-| Super+Space, Super+D | Launch dmenu_run (installed commands) |
-| Super+F | Launch Xfe |
-| Super+B | Launch Firefox |
-| Super+S | Open or focus Blix Settings |
-| Super+Q | Close focused window |
-| Super+P | Toggle focused window floating |
-| Super+Shift+F | Toggle fullscreen |
-| Super+Tab | Previous numbered tag, wrapping; **not** last-visited tag |
-| Super+1…9 | View tag 1…9 (Lua indices 0…8) |
-| Super+Shift+1…9 | Move focused window to tag 1…9 |
-| Super+Left / Up | Previous window in native stack order |
-| Super+Right / Down | Next window in native stack order |
-| Super+Shift+Left / Up | Move window backward in stack order |
-| Super+Shift+Right / Down | Move window forward in stack order |
-| Super+Ctrl+Left / Up | Previous monitor in OXWM monitor order |
-| Super+Ctrl+Right / Down | Next monitor in OXWM monitor order |
-| Super+Ctrl+Shift+Left / Up | Send window to previous monitor |
-| Super+Ctrl+Shift+Right / Down | Send window to next monitor |
-| Super+Minus / Equal | Decrease/increase master area by 5 percentage points (within native limits) |
-| Super+Shift+Minus / Equal | Decrease/increase master window count |
-| Super+N | Cycle native layouts |
-| Super+R | Select dwindle layout |
-| Super+C | Select classic master/stack tiling |
-| Super+Shift+Q | Native immediate quit; the confirmed control-menu logout invokes this binding |
-| Super+Shift+S | Drag-select, save PNG, copy exact saved PNG |
+| Alt+Enter | Launch st |
+| Alt+Space | Search desktop applications by name in Rofi |
+| Alt+D | Run an installed command with dmenu |
+| Alt+F | Open Thunar |
+| Alt+B | Launch Firefox |
+| Alt+S | Open or focus Blix Settings |
+| Alt+Q | Close focused window |
+| Alt+P | Toggle focused window floating |
+| Alt+Shift+F | Toggle fullscreen |
+| Alt+Tab | Previous numbered tag, wrapping; **not** last-visited tag |
+| Alt+1…9 | View tag 1…9 (Lua indices 0…8) |
+| Alt+Shift+1…9 | Move focused window to tag 1…9 |
+| Alt+Left / Up | Previous window in native stack order |
+| Alt+Right / Down | Next window in native stack order |
+| Alt+Shift+Left / Up | Move window backward in stack order |
+| Alt+Shift+Right / Down | Move window forward in stack order |
+| Alt+Ctrl+Left / Up | Previous monitor in OXWM monitor order |
+| Alt+Ctrl+Right / Down | Next monitor in OXWM monitor order |
+| Alt+Ctrl+Shift+Left / Up | Send window to previous monitor |
+| Alt+Ctrl+Shift+Right / Down | Send window to next monitor |
+| Alt+Minus / Equal | Decrease/increase master area by 5 percentage points (within native limits) |
+| Alt+Shift+Minus / Equal | Decrease/increase master window count |
+| Alt+N | Cycle native layouts |
+| Alt+R | Select dwindle layout |
+| Alt+C | Select classic master/stack tiling |
+| Alt+Shift+Q | Native immediate quit; the confirmed control-menu logout invokes this binding |
+| Alt+Shift+S | Drag-select, save PNG, copy exact saved PNG |
 | Print | Full-screen PNG, save + clipboard |
 | Alt+Print | Focused-window PNG, save + clipboard |
-| Super+V | dmenu text clipboard history |
-| Super+L | Lock through the session's xss-lock service |
-| Super+Shift+Space | Control menu |
+| Alt+V | dmenu text clipboard history |
+| Alt+L | Lock through the session's xss-lock service |
+| Alt+Shift+Space | Control menu |
 | XF86AudioRaiseVolume | `wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+` |
 | XF86AudioLowerVolume | `wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-` |
 | XF86AudioMute | Toggle sink mute |
@@ -130,11 +132,11 @@ Super means Mod4 and Alt means Mod1. The source of truth is
 | XF86MonBrightnessUp / Down | ±5% backlight, down clamped to 1; no-op without a backlight |
 
 Arrow bindings follow native stack/monitor order, not geometric direction.
-Super+Tab moves to the previous numbered tag rather than the last visited tag.
+Alt+Tab moves to the previous numbered tag rather than the last visited tag.
 The layout cycle contains tiling, monocle, floating, scrolling, grid, and dwindle.
-Super+Shift+Enter is unbound; gammastep has no default keybinding.
+Alt+Shift+Enter is unbound; gammastep has no default keybinding.
 
-The control menu confirms logout before sending the native Super+Shift+Q
+The control menu confirms logout before sending the native Alt+Shift+Q
 binding through xdotool. Pressing that binding directly quits immediately.
 The pinned OXWM build has no external quit IPC. Master resizing uses ±50 in
 OXWM's 1/1000 units for a five-percentage-point change.
@@ -155,7 +157,7 @@ and the account's login shell is unchanged. For TTY access to Minarch helpers,
 ensure your Bash configuration exports `PATH="$HOME/.local/bin:$PATH"`.
 X sessions already set that path.
 
-Open st with Super+Enter and run `vim path/to/file` or `vim .` in a project.
+Open st with Alt+Enter and run `vim path/to/file` or `vim .` in a project.
 Minarch installs Vim with its stock defaults and sets `EDITOR` and `VISUAL`
 to `vim` in its Bash configuration.
 
@@ -236,7 +238,7 @@ and the Mozilla Add-ons API on 2026-09-28. Use current Arch Firefox;
 
 ## Files, media, and hardware
 
-Xfe has a dark profile and is the default directory handler. Firefox opens web
+Thunar opens folders on demand and is the default directory handler. Firefox opens web
 links, mpv opens audio/video, and feh opens images. Removable media is mounted
 manually; no automounter is included. PipeWire, WirePlumber, and pipewire-pulse
 handle audio. Media and brightness bindings are listed above.
@@ -251,8 +253,8 @@ and pointing sticks. Machine-specific settings live in
 `${XDG_CONFIG_HOME:-$HOME/.config}/minarch/hardware.conf`. The shipped profile keeps
 these defaults:
 
-- Swap Command/Alt positions on `Gaming Keyboard` (`1fc9:e8c7`), including
-  reconnects; the laptop keyboard keeps its mapping.
+- Enable Ctrl+Alt+Backspace on `Gaming Keyboard` (`1fc9:e8c7`), including
+  reconnects. Its physical Alt key uses the standard Alt mapping.
 - Mirror HDMI-2 to eDP-1 at 1920×1080/60 Hz, including display hotplug.
 - Merge duplicate mirrored Xinerama rectangles in OXWM to avoid overlapping bars.
 
@@ -283,11 +285,11 @@ NVIDIA generations or install a broad collection of graphics drivers.
 
 Screenshots save private, uniquely named PNG files in `~/Pictures/Screenshots/`
 and place the exact saved image on the X clipboard as `image/png`. Use
-Super+Shift+S for a region, Print for the screen, or Alt+Print for the focused
+Alt+Shift+S for a region, Print for the screen, or Alt+Print for the focused
 window. Escape preserves the clipboard and saves nothing. xclip remains alive
 while serving copied content, as required by X selections.
 
-Super+V opens clipmenu's text history through dmenu, limited to 100 entries.
+Alt+V opens clipmenu's text history through dmenu, limited to 100 entries.
 The watcher is event-driven. Image history is not provided; the current image
 can still be pasted. A private xsel probe skips image-only selections to avoid
 interrupting large PNG pastes. Copied text can contain secrets. Pause/resume
@@ -323,9 +325,11 @@ add no idle process merely by being installed.
 | X configuration/inspection | xorg-xset, xorg-setxkbmap, xorg-xkbcomp, xorg-xrandr, xorg-xprop, xorg-xdpyinfo | Keyboard remapping, display setup, DPMS, and inspection; xdpyinfo is also used by startx |
 | URL/MIME opening | xdg-utils | Browser authentication links and MIME defaults without a DE |
 | Browser | firefox, firefox-ublock-origin | Privacy policies; packaged uBlock Origin; Dark Reader and Enhancer for YouTube installed through Mozilla Add-ons |
-| Launcher/media | dmenu, mpv, feh | Immediate command search; on-demand playback/image viewing |
-| Screen color temperature | gammastep | Included for user-configured color temperature adjustment; no default autostart |
-| Project workflow | git, openssh, vim, fastfetch, lazygit | Requested editor, compact system display, Git tools and SSH client; sshd never enabled |
+| Launcher/media | rofi, dmenu, mpv, feh | On-demand application search, command prompts, playback and image viewing |
+| File manager | thunar | Opens on demand from Alt+F or a folder link |
+| Notifications | dunst, libnotify | D-Bus activates Dunst when a notification is sent |
+| Screen color temperature | gammastep | One-shot color temperature adjustment for Night Light |
+| Project workflow | git, openssh, vim, fastfetch | Requested editor, compact system display, Git and SSH client; sshd never enabled |
 | CLI tools | ripgrep, fd, fzf, curl, jq, bat, eza, btop, less, man-db, unzip, bash-completion | Explicitly requested tools; no background services |
 | Builds/checks | base-devel, shellcheck, libx11, libxft, libxext, fontconfig | AUR/st compilation and repo checks; gcc/make/patch come from base-devel |
 | Codex | openai-codex | Maintained official Arch binary package; no AUR/npm/Node requirement |
@@ -342,7 +346,6 @@ add no idle process merely by being installed.
 | Package built locally | Source and purpose |
 | --- | --- |
 | oxwm-git | Pinned AUR recipe/source; Zig window manager with microphone keysym and mirrored-screen patches |
-| xfe | Pinned AUR recipe for the graphical file manager |
 | blesh-git | Pinned AUR recipe plus ble.sh/contrib source commits; interactive Bash editing |
 | st-minarch | Local recipe for st 0.9.3, scrollback/URL patch and Bash/ble.sh startup |
 
@@ -367,12 +370,15 @@ invalidated once to recover builds that may previously have been skipped.
 | --- | --- | --- |
 | `polkit.service` / polkitd | D-Bus activated as logind authorizes power actions; not explicitly enabled | Allows the normal active local user to use the requested power menu; no GUI agent |
 | `fstrim.timer` | Enabled system-wide only when lsblk reports discard support | Standard periodic SSD discard; no continuous worker |
+| `man-db.timer` | Masked by the full installer | Skips scheduled manual index maintenance while keeping `man` available |
 | `minarch-session.target` | Started explicitly by .xinitrc; not enabled at boot | Groups X-specific services |
 | `minarch-lock.service` / xss-lock | During X | Receives X/logind events, holds suspend delay inhibitor, launches XSecureLock only when needed |
-| `minarch-clipboard.service` / clipmenud + clipnotify | During X | Event-driven text clipboard history required for Super+V |
+| `minarch-clipboard.service` / clipmenud + clipnotify | During X | Event-driven text clipboard history required for Alt+V |
 | `minarch-hardware-hotplug.service` / udev monitor | During X | Restores the selected external keyboard map and HDMI mirror after reconnects |
 | `minarch-bar-volume.service` / pactl subscribe | During X | Refreshes the volume block on sink and server changes |
 | `minarch-picom.service` / picom | During X except while locked | Compositing with fully opaque windows; stopped before XSecureLock and restarted after unlock |
+| `minarch-nightlight.service` | At X startup, on setting changes, and after display hotplug | Runs Gammastep once to apply or reset display warmth |
+| `dunst.service` | From the first notification until X session shutdown | Shows desktop notifications, including failures from shortcut actions |
 | `pipewire.socket`, `pipewire-pulse.socket` | Started with the X session | On-demand native/Pulse audio endpoints |
 | `wireplumber.service` and PipeWire audio processes | User audio session | Device/session routing and reliable browser audio |
 
@@ -380,14 +386,16 @@ The session target binds to xss-lock. When its X connection disappears, the
 target stops clipboard, hotplug, and Picom services. Audio may remain while the
 TTY session is logged in; no user lingering is enabled. The hotplug helper
 watches input, display, and backlight events through one udev subscription.
-The volume and brightness blocks refresh on changes. The battery menu reads
-the active power mode while open. OXWM reads battery data every 30 seconds
-in-process. The clock updates every minute.
+The volume and brightness blocks refresh on changes. The battery menu and
+the Blix Settings Power page query power profiles on demand. At login, the
+session contacts the service only to restore a previously saved power mode.
+OXWM reads battery data every 30 seconds in-process. The clock updates every
+minute.
 Blix Settings refreshes when focused, when switching pages, after edits, and
 when you press F5.
 
 Minarch does not enable another network manager, sshd, Bluetooth, printing,
-automounting, notifications, portals, a graphical privilege agent, keyrings,
+automounting, portals, a graphical privilege agent, keyrings,
 indexing, or a tuning daemon. Existing user services are reported and retained.
 No governors, sysctl settings, kernel command-line parameters, or filesystem
 optimizations are forced.

@@ -25,7 +25,7 @@ PAGES = [
     ("network", "Networking", "network-wireless-symbolic", "Wi-Fi, Ethernet and saved connections", "wifi wi-fi internet ethernet connection password vpn"),
     ("power", "Power", "battery-symbolic", "Power mode, battery status, display timeout and session controls", "battery charging sleep suspend lock screen off idle performance balanced saver longevity"),
     ("input", "Input", "input-touchpad-symbolic", "Pointing devices and keyboard repeat", "mouse touchpad keyboard tapping scrolling speed repeat"),
-    ("shortcuts", "Shortcuts", "preferences-desktop-keyboard-shortcuts-symbolic", "A quick reference for your OXWM keyboard shortcuts", "key binding super shortcut"),
+    ("shortcuts", "Shortcuts", "preferences-desktop-keyboard-shortcuts-symbolic", "A quick reference for your OXWM keyboard shortcuts", "key binding alt shortcut"),
     ("about", "About", "computer-symbolic", "Your device and the Blix desktop", "system version cpu processor memory storage kernel"),
 ]
 
@@ -1222,8 +1222,7 @@ class Window(Gtk.ApplicationWindow):
                     self.syncing = False
 
     def update_power_profiles(self, state):
-        supported = self.defaults.get("capabilities", {}).get("hasPowerProfiles", False)
-        if not supported:
+        if not state["available"]:
             self.power_mode_card.hide()
             return
         self.power_mode_card.show()
@@ -1236,7 +1235,7 @@ class Window(Gtk.ApplicationWindow):
             for profile, control in self.power_mode_controls.items():
                 control.set_sensitive(state["available"] and profile in state.get("profiles", []))
                 control.set_active(profile == state.get("active"))
-            self.power_mode_status.set_text(state.get("error", "Your choice is saved and stays selected when the charger changes."))
+            self.power_mode_status.set_text("Your choice is saved and stays selected when the charger changes.")
         finally:
             self.syncing = False
 

@@ -4,6 +4,8 @@ PartOf=minarch-session.target
 ConditionEnvironment=DISPLAY
 
 [Service]
-Type=exec
+Type=oneshot
+RemainAfterExit=yes
 ExecStart=%h/.local/bin/blix-settings-apply nightlight
-ExecStopPost=/usr/bin/gammastep -m randr -x
+ExecReload=%h/.local/bin/blix-settings-apply nightlight
+ExecStop=/usr/bin/gammastep -m randr -x

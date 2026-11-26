@@ -20,10 +20,14 @@ mkdir -p "$directory"
 staging=$(mktemp "$directory/.capture.XXXXXXXX")
 trap 'rm -f -- "$staging"' EXIT
 # Cancellation/failure never reaches xclip, and leaves no saved empty image.
-if ! maim -f png "${args[@]}" "$staging"; then
-  [[ -z ${1:-} ]] && exit 0
+if ! diagnostics=$(LC_ALL=C maim -f png "${args[@]}" "$staging" 2>&1); then
+  if [[ -z ${1:-} && $diagnostics == *'Selection was cancelled by keystroke or right-click.'* ]]; then
+    exit 0
+  fi
+  printf '%s\n' "${diagnostics:-Could not capture the screen.}" >&2
   exit 1
 fi
+[[ -z $diagnostics ]] || printf '%s\n' "$diagnostics" >&2
 [[ $(od -An -tx1 -N8 "$staging" | tr -d ' \n') == 89504e470d0a1a0a ]] || { echo 'Capture was not a PNG' >&2; exit 1; }
 file=$(mktemp --suffix=.png "$directory/$(date +%Y-%m-%d_%H-%M-%S)-XXXXXXXX")
 if ! mv -T -- "$staging" "$file"; then

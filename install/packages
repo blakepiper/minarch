@@ -16,6 +16,9 @@ xdg-utils
 firefox
 firefox-ublock-origin
 dmenu
+rofi
+thunar
+dunst
 mpv
 feh
 gammastep
@@ -32,7 +35,6 @@ bat
 eza
 btop
 fastfetch
-lazygit
 less
 man-db
 unzip

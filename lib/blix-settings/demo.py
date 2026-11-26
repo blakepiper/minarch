@@ -21,7 +21,7 @@ class DemoPreferences:
 class Demo:
     def __init__(self):
         self.calls = []
-        self.defaults = {"capabilities": {"hasBacklight": True, "hasBattery": True, "hasBluetooth": True, "hasPowerProfiles": True},
+        self.defaults = {"capabilities": {"hasBacklight": True, "hasBattery": True, "hasBluetooth": True},
                          "display": {"primaryOutput": "eDP-1", "layout": "extend", "primaryRotation": "normal",
                                      "blankAfterSeconds": 0}, "keyboard": {"delay": 200, "rate": 50},
                          "input": {"mouse": {"speed": 0, "natural": True},

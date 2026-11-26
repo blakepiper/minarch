@@ -6,7 +6,6 @@ install_user() {
   install_config "$ROOT/config/oxwm" "$config_home/oxwm"
   install_config "$ROOT/config/picom/picom.conf" "$config_home/picom/picom.conf"
   install_config "$ROOT/config/fastfetch/config.jsonc" "$config_home/fastfetch/config.jsonc"
-  install_config "$ROOT/config/xfe/xferc" "$config_home/xfe/xferc"
   install_config "$ROOT/config/mimeapps.list" "$config_home/mimeapps.list"
   install_config "$ROOT/config/session/xinitrc" "$HOME/.xinitrc"
   install_config "$ROOT/config/bash/bashrc" "$HOME/.bashrc"
@@ -17,8 +16,11 @@ install_user() {
   done
   install_config "$ROOT/lib/clipmenu-text-probe/xsel" "$HOME/.local/lib/clipmenu-text-probe/xsel"
   for file in "$ROOT"/config/systemd/user/*; do
+    [[ -f $file ]] || continue
     install_config "$file" "$config_home/systemd/user/$(basename "$file")"
   done
+  install_config "$ROOT/config/systemd/user/dunst.service.d/50-minarch-session.conf" \
+    "$config_home/systemd/user/dunst.service.d/50-minarch-session.conf"
   mkdir -p "$HOME/Pictures/Screenshots"
   if [[ ${CLEANUP_RETIRED:-false} == true ]]; then
     cleanup_retired

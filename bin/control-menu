@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+command -v dmenu >/dev/null || { echo 'control-menu: install dmenu' >&2; exit 1; }
 confirm() {
   local answer
   answer=$(printf 'No\nYes\n' | dmenu -i -p "$1") || return 1
@@ -17,7 +18,7 @@ case $choice in
   'Log Out')
     if confirm 'Log out? Unsaved work may be lost.'; then
       # OXWM has no quit IPC; dispatch its dedicated native quit action.
-      xdotool key --clearmodifiers super+shift+q
+      xdotool key --clearmodifiers alt+shift+q
     fi ;;
   'Monitors Off') sleep 0.2; xset dpms force off ;;
   'Power Off') if confirm 'Power off?'; then systemctl poweroff; fi ;;

@@ -119,6 +119,7 @@ watch_hotplug() {
             if [[ $hotplug == 1 ]]; then
               sleep 1
               configure_external_monitor
+              systemctl --user try-reload-or-restart minarch-nightlight.service || true
             fi ;;
           backlight:change)
             xprop -root -f _MINARCH_BRIGHTNESS 8s -set _MINARCH_BRIGHTNESS refresh >/dev/null ;;

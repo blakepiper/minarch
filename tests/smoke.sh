@@ -9,8 +9,8 @@ pass() { printf 'PASS: %s\n' "$*"; }
 fail() { printf 'FAIL: %s\n' "$*" >&2; failures=$((failures + 1)); }
 check_file() { [[ -f $1 ]] && pass "$1" || fail "Missing $1"; }
 [[ -f /etc/arch-release ]] && pass Arch || fail 'Arch not detected'
-for executable in Xorg startx oxwm st dmenu dmenu_run xfe firefox vim codex maim slop xclip \
-  clipmenu clipmenud xss-lock xsecurelock picom gammastep fastfetch xkbcomp wpctl pipewire wireplumber playerctl git rg fd lazygit fc-match; do
+for executable in Xorg startx oxwm st dmenu dmenu_run rofi thunar dunst notify-send firefox vim codex maim slop xclip \
+  clipmenu clipmenud xss-lock xsecurelock picom gammastep fastfetch xkbcomp wpctl pipewire wireplumber playerctl git rg fd fc-match; do
   command -v "$executable" >/dev/null && pass "$executable" || fail "Missing $executable"
 done
 check_file "$HOME/.xinitrc"
@@ -32,11 +32,11 @@ check_file "$config/oxwm/config.lua"
 if command -v oxwm >/dev/null; then
   oxwm --validate "$config/oxwm/config.lua" && pass 'OXWM validation' || fail 'OXWM validation'
 fi
-for binding in 'spawn_terminal()' '"dmenu_run"' '"xfe"' '"firefox"' '"blix-settings"' '"screenshot-region"' \
-  '"clipboard-history"' '"minarch-lock"' '"control-menu"' 'oxwm.tag.view(i - 1)' 'oxwm.tag.move_to(i - 1)'; do
+for binding in 'spawn_terminal()' '"dmenu_run"' '"rofi -show drun' '"thunar"' '"firefox"' '"blix-settings"' 'screenshot-region' \
+  'clipboard-history' 'minarch-lock' 'control-menu' 'oxwm.tag.view(i - 1)' 'oxwm.tag.move_to(i - 1)'; do
   grep -Fq "$binding" "$config/oxwm/config.lua" && pass "$binding" || fail "Missing binding: $binding"
 done
-for helper in screenshot-region control-menu clipboard-history minarch-lock minarch-brightness minarch-stats \
+for helper in screenshot-region control-menu clipboard-history minarch-lock minarch-brightness minarch-stats minarch-notify-failure \
   blix-settings blix-settings-apply oxwm-volume oxwm-brightness minarch-monitor-brightness \
   minarch-hardware-hotplug minarch-picom oxwm-watch-volume xsecurelock-without-picom; do
   file=$HOME/.local/bin/$helper
@@ -46,7 +46,8 @@ done
 mkdir -p "$HOME/Pictures/Screenshots" && pass 'Screenshot directory' || fail 'Screenshot directory'
 check_file "$config/picom/picom.conf"
 check_file "$config/minarch/hardware.conf"
-check_file "$config/xfe/xferc"
+check_file "$config/systemd/user/dunst.service.d/50-minarch-session.conf"
+grep -Fxq 'inode/directory=thunar.desktop' "$config/mimeapps.list" && pass 'Thunar folder handler' || fail 'Thunar folder handler missing'
 check_file "$config/fastfetch/config.jsonc"
 check_file "$config/systemd/user/minarch-picom.service"
 check_file "$config/systemd/user/minarch-hardware-hotplug.service"

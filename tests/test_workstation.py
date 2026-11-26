@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -147,7 +148,9 @@ class ConfigSafety(Sandbox):
         self.assertTrue((self.home / ".local/lib/clipmenu-text-probe/xsel").stat().st_mode & 0o111)
         self.assertTrue((self.home / ".config/picom/picom.conf").is_file())
         self.assertTrue((self.home / ".config/minarch/hardware.conf").is_file())
-        self.assertTrue((self.home / ".config/xfe/xferc").is_file())
+        self.assertIn("inode/directory=thunar.desktop", (self.home / ".config/mimeapps.list").read_text())
+        dunst = self.home / ".config/systemd/user/dunst.service.d/50-minarch-session.conf"
+        self.assertIn("PartOf=minarch-session.target", dunst.read_text())
         self.assertTrue((self.home / ".config/fastfetch/config.jsonc").is_file())
         launcher = self.home / ".local/bin/blix-settings"
         self.assertTrue((data_home / "minarch/blix-settings/main.py").is_file())
@@ -339,6 +342,7 @@ if [[ $1 == --query ]]; then cat "$TEST_OUTPUTS"; else echo "xrandr $*" >> "$TES
         self.command('setxkbmap', 'echo "setxkbmap $*" >> "$TEST_CALLS"\n')
         self.command('xkbcomp', 'cat >/dev/null\n')
         self.command('sleep', 'exit 0\n')
+        self.command('systemctl', 'echo "systemctl $*" >> "$TEST_CALLS"\n')
         self.command('udevadm', '''
 if [[ $* == *subsystem-match=input* ]]; then
   printf 'SUBSYSTEM=input\nACTION=add\nID_VENDOR_ID=abcd\nID_MODEL_ID=1234\n\n'
@@ -356,7 +360,8 @@ fi
         monitor = 'xrandr --output DP-3 --mode 2560x1440 --rate 75 --same-as eDP-2'
         self.assertEqual(rows.count(keyboard), 2)
         self.assertEqual(rows.count(monitor), 2)
-        self.assertEqual(len(rows), 4)
+        self.assertEqual(rows, [keyboard, monitor, keyboard, monitor,
+                                'systemctl --user try-reload-or-restart minarch-nightlight.service'])
 
     def test_missing_source_monitor_and_disabled_features(self):
         self.outputs.write_text('DP-3 connected\neDP-2 disconnected\n')
@@ -398,7 +403,13 @@ class Screenshots(Sandbox):
         self.clipboard = self.base / "clipboard"
         self.clipboard.write_bytes(b"previous contents")
         self.env["TEST_CLIPBOARD"] = str(self.clipboard)
-        self.command("maim", '[[ ${CANCEL:-0} == 0 ]] || exit 1\nprintf "\\211PNG\\r\\n\\032\\nexact-png-payload" > "${@: -1}"\n')
+        self.command("maim", '''
+if [[ ${CANCEL:-0} != 0 ]]; then
+  echo 'Selection was cancelled by keystroke or right-click.' >&2
+  exit 1
+fi
+printf "\\211PNG\\r\\n\\032\\nexact-png-payload" > "${@: -1}"
+''')
         self.command("xclip", 'cp -- "${@: -1}" "$TEST_CLIPBOARD"\n')
         self.command("xprop", 'echo "_NET_ACTIVE_WINDOW(WINDOW): window id # 0x123"\n')
 
@@ -423,6 +434,21 @@ class Screenshots(Sandbox):
         result = subprocess.run([str(ROOT / "bin/screenshot-region")], env=self.env, capture_output=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(self.clipboard.read_bytes(), b"previous contents")
+
+    def test_shortcut_reports_capture_failure_but_not_cancellation(self):
+        notifications = self.base / "notifications"
+        self.env["TEST_NOTIFICATIONS"] = str(notifications)
+        self.command("notify-send", 'printf "%s\\n" "$@" >> "$TEST_NOTIFICATIONS"\n')
+        shortcut = [str(ROOT / "bin/minarch-notify-failure"), "Screenshot failed",
+                    str(ROOT / "bin/screenshot-region")]
+        run(shortcut, env=dict(self.env, CANCEL="1"))
+        self.assertFalse(notifications.exists())
+        self.command("maim", 'echo "could not read display" >&2\nexit 1\n')
+        result = subprocess.run(shortcut, env=self.env, text=True, capture_output=True)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("could not read display", result.stderr)
+        self.assertEqual(notifications.read_text().splitlines()[-2:],
+                         ["Screenshot failed", "could not read display"])
 
 
 class PowerMenu(Sandbox):
@@ -454,7 +480,7 @@ sed -i '1d' "$TEST_QUEUE"
         self.assertEqual(self.select("Suspend").splitlines(), ["minarch-lock ", "systemctl suspend"])
 
     def test_logout_native_quit_binding(self):
-        self.assertIn("xdotool key --clearmodifiers super+shift+q", self.select("Log Out", "Yes"))
+        self.assertIn("xdotool key --clearmodifiers alt+shift+q", self.select("Log Out", "Yes"))
 
 
 class HardwareSelection(Sandbox):
@@ -508,8 +534,12 @@ if [[ ${2:-} == import-environment ]]; then
 fi
 ''')
         self.command("busctl", "echo '{\"data\":[[[\"sleep\",\"xss-lock\",\"lock\",\"delay\",1000,1234]]]}'\n")
+        calls = self.base / "settings-calls"
+        self.env["TEST_CALLS"] = str(calls)
+        self.command("blix-settings-apply", 'echo "$*" >> "$TEST_CALLS"\n')
         self.command("oxwm", 'echo "wm-started"\n')
         self.assertIn("wm-started", run(["bash", str(session)], env=self.env).stdout)
+        self.assertEqual(calls.read_text().splitlines(), ["apply-session"])
         imported_lines = imported.read_text().splitlines()
         self.assertTrue({'XDG_CONFIG_HOME', 'XDG_DATA_HOME', 'XDG_STATE_HOME', 'XDG_CACHE_HOME'}
                         <= set(imported_lines[0].split()))
@@ -522,10 +552,27 @@ fi
         self.assertNotIn("wm-started", result.stdout)
 
 
+class NightLight(Sandbox):
+    def test_one_shot_temperature_and_reset(self):
+        runtime = ROOT / "lib/blix-settings/main.py"
+        calls = self.base / "gamma-calls"
+        self.env["TEST_CALLS"] = str(calls)
+        self.command("gammastep", 'printf "%s\\n" "$*" >> "$TEST_CALLS"\n')
+        preferences = self.home / ".config/blix/settings.json"
+        preferences.parent.mkdir(parents=True)
+        for enabled in (True, False):
+            preferences.write_text(json.dumps({"nightlight": {"enabled": enabled, "intensity": 50}}))
+            run([sys.executable, str(runtime), "--runtime", "nightlight"],
+                env=dict(self.env, PYTHONDONTWRITEBYTECODE="1"))
+        self.assertEqual(calls.read_text().splitlines(), ["-m randr -P -O 4500", "-m randr -x"])
+
+
 class RepositoryPolicy(unittest.TestCase):
     def test_manifest_and_firefox(self):
         packages = {line.split("#")[0].strip() for line in (ROOT / "install/packages").read_text().splitlines()}
         self.assertTrue({"openai-codex", "firefox-ublock-origin", "xsecurelock", "xss-lock"} <= packages)
+        self.assertIn("git", packages)
+        self.assertNotIn("lazygit", packages)
         banned = {"bluez", "blueman", "cups", "avahi", "networkmanager", "wl-clipboard", "sddm", "gnome-keyring"}
         self.assertFalse(banned & packages)
         self.assertTrue({"picom", "fastfetch", "xorg-xkbcomp"} <= packages)

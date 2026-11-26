@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 command -v clipmenu >/dev/null || { echo 'clipboard-history: install clipmenu' >&2; exit 1; }
+command -v dmenu >/dev/null || { echo 'clipboard-history: install dmenu' >&2; exit 1; }
 export CM_LAUNCHER=dmenu
-exec clipmenu -i -l 12 -p Clipboard
+clipmenu -i -l 12 -p Clipboard || {
+  status=$?
+  # clipmenu returns 1 when the chooser is dismissed or no entry is selected.
+  [[ $status == 1 ]] && exit 0
+  printf 'Could not read clipboard history. Check minarch-clipboard.service.\n' >&2
+  exit "$status"
+}

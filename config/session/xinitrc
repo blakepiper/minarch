@@ -39,7 +39,7 @@ export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 export XDG_DATA_HOME=${XDG_DATA_HOME:-$HOME/.local/share}
 export XDG_STATE_HOME=${XDG_STATE_HOME:-$HOME/.local/state}
 export XDG_CACHE_HOME=${XDG_CACHE_HOME:-$HOME/.cache}
-export MINARCH_BRIGHTNESS='' MINARCH_POWER_PROFILES=''
+export MINARCH_BRIGHTNESS=''
 if command -v brightnessctl >/dev/null && compgen -G '/sys/class/backlight/*/brightness' >/dev/null; then
   MINARCH_BRIGHTNESS=backlight
 elif command -v ddcutil >/dev/null; then
@@ -50,11 +50,10 @@ elif command -v ddcutil >/dev/null; then
   done
 fi
 if command -v blix-settings-apply >/dev/null; then
-  MINARCH_POWER_PROFILES=$(blix-settings-apply power-modes 2>/dev/null) || MINARCH_POWER_PROFILES=''
   blix-settings-apply apply-session
 fi
 systemctl --user import-environment DISPLAY XAUTHORITY PATH XDG_CURRENT_DESKTOP XDG_SESSION_TYPE XDG_SESSION_ID \
-  XDG_CONFIG_HOME XDG_DATA_HOME XDG_STATE_HOME XDG_CACHE_HOME MINARCH_BRIGHTNESS MINARCH_POWER_PROFILES
+  XDG_CONFIG_HOME XDG_DATA_HOME XDG_STATE_HOME XDG_CACHE_HOME MINARCH_BRIGHTNESS
 systemctl --user daemon-reload
 systemctl --user start minarch-session.target || {
   echo 'Unable to start session locking/services; see journalctl --user.' >&2

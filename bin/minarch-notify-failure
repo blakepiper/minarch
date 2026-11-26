@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Run a shortcut and show its error when it has no terminal of its own.
+(( $# >= 2 )) || exit 2
+title=$1
+shift
+errors=$(mktemp) || exec "$@"
+trap 'rm -f -- "$errors"' EXIT
+if "$@" 2>"$errors"; then
+  cat -- "$errors" >&2
+  exit 0
+else
+  status=$?
+fi
+cat -- "$errors" >&2
+message=$(<"$errors")
+notify-send --app-name=Minarch --urgency=critical -- "$title" \
+  "${message:-$1 exited with status $status.}" || true
+exit "$status"

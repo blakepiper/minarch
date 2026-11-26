@@ -113,11 +113,11 @@ with tempfile.TemporaryDirectory(prefix="minarch-x11-") as temp:
         print("PASS: image-only clipboard survives clipmenu's text probe")
 
         # Layout bindings and the menu's exact quit bridge on the nested WM.
-        run(["xdotool", "key", "--clearmodifiers", "super+c"])
-        run(["xdotool", "key", "--clearmodifiers", "super+r"])
+        run(["xdotool", "key", "--clearmodifiers", "alt+c"])
+        run(["xdotool", "key", "--clearmodifiers", "alt+r"])
         time.sleep(.2)
         assert wm.poll() is None
-        run(["xdotool", "key", "--clearmodifiers", "super+shift+q"])
+        run(["xdotool", "key", "--clearmodifiers", "alt+shift+q"])
         wm.wait(timeout=5)
         assert wm.returncode == 0
         print("PASS: OXWM starts, manages st, switches layouts, and quits through its native action")
