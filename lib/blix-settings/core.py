@@ -409,7 +409,7 @@ def default_display(available, display=None):
         enabled = item in selected
         mode = preferred_mode(item, mirror_mode if mirrored else None)
         rotation = display.get("primaryRotation", "normal") if item == primary else "normal"
-        scale = 1.25
+        scale = 1.5
         if item == primary and not mirrored and display.get("primaryScaleFrom"):
             logical_width = int(display["primaryScaleFrom"].split("x")[0])
             scale = mode_size(mode, rotation)[0] / logical_width
