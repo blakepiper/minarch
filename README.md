@@ -54,11 +54,18 @@ or system changes. It is useful for inspection, not a full installation.
 see [configuration ownership](#updates-and-configuration-ownership) for cleanup
 details and replacement behavior.
 
+After a full installation, reboot. Tuigreet appears on VT1. Sign in with
+your Linux account and it starts Minarch through `startx`. Logging out
+returns to the greeter. The installer selects
+`graphical.target` as the boot target and uses a separate Minarch greetd
+configuration. An enabled display manager must be disabled before switching.
+Press **Ctrl+Alt+F2** for a recovery TTY. To return to text login on the next
+boot, sign in there and run `sudo systemctl disable greetd.service`.
+
 ## Desktop and keybindings
 
-Reboot if the kernel or input rules changed. Log in on a local TTY and run
-`startx`. There is no graphical login manager, autologin, or automatic restart
-loop. Quitting OXWM returns to the TTY.
+You can also launch Minarch manually from a local TTY with `startx`.
+Quitting a manually started session returns to the TTY.
 
 [Session startup](config/session/xinitrc) imports the local logind session,
 configures input and external displays, starts session services, and ends in
@@ -302,7 +309,10 @@ authorizes normal-user logind actions. Additional sessions or blocking inhibitor
 may require a manual `sudo systemctl ...` action.
 
 XSecureLock runs through xss-lock. Its wrapper stops Picom before locking and
-restarts it after unlocking. xss-lock holds a logind delay inhibitor and waits
+restarts it after unlocking. The lock screen shows the time and prompts for the
+current user's password as soon as a manual lock completes or the laptop
+resumes. Tuigreet handles login after boot and logout. xss-lock holds a logind
+delay inhibitor and waits
 for the locker to be ready before normal suspend, including lid/external
 suspend. X startup checks that the lock service owns this inhibitor before
 launching OXWM. A local logind session is required; Minarch manages one X session
@@ -321,7 +331,8 @@ add no idle process merely by being installed.
 
 | Purpose | Direct official packages | Rationale / persistent activity |
 | --- | --- | --- |
-| X server/session | xorg-server, xorg-xinit, xf86-input-libinput, xorg-xauth | Xorg, startx and input; no display manager |
+| X server/session | xorg-server, xorg-xinit, xf86-input-libinput, xorg-xauth | Xorg, startx, and input |
+| Login | greetd, greetd-tuigreet | Password prompt and automatic X session launch after login |
 | X configuration/inspection | xorg-xset, xorg-setxkbmap, xorg-xkbcomp, xorg-xrandr, xorg-xprop, xorg-xdpyinfo | Keyboard remapping, display setup, DPMS, and inspection; xdpyinfo is also used by startx |
 | URL/MIME opening | xdg-utils | Browser authentication links and MIME defaults without a DE |
 | Browser | firefox, firefox-ublock-origin | Privacy policies; packaged uBlock Origin; Dark Reader and Enhancer for YouTube installed through Mozilla Add-ons |
@@ -481,7 +492,7 @@ in those tests; actual package transactions and physical hotplug remain hardware
 checks.
 
 Still verify on the installed workstation: a complete Arch package transaction,
-first TTY/startx session, actual extension installation, password locking,
+first tuigreet login and TTY recovery, actual extension installation, password locking,
 lid/suspend/resume, GPU acceleration, display/input hotplug, audio, and brightness.
 
 | Area | Checks |

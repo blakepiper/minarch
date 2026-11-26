@@ -23,5 +23,12 @@ restore_picom() {
 trap restore_picom EXIT
 
 exec_status=0
-/usr/bin/xsecurelock "$@" || exec_status=$?
+# The callback runs after XSecureLock has grabbed input and covered the screen.
+# During suspend, the system sleep hook opens the prompt on resume instead.
+# shellcheck disable=SC2016
+/usr/bin/xsecurelock "$@" -- /usr/bin/bash -c '
+  if [[ -z ${XSS_SLEEP_LOCK_FD:-} ]]; then
+    kill -USR2 "$PPID"
+  fi
+' || exec_status=$?
 exit "$exec_status"

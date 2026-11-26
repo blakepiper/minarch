@@ -6,4 +6,6 @@ PartOf=minarch-session.target
 Type=exec
 ExecStart=/usr/bin/xss-lock --transfer-sleep-lock --session ${XDG_SESSION_ID} -- %h/.local/bin/xsecurelock-without-picom
 Environment=XSECURELOCK_SAVER=saver_blank
+Environment=XSECURELOCK_SHOW_USERNAME=0 XSECURELOCK_SHOW_HOSTNAME=0
+Environment=XSECURELOCK_SHOW_DATETIME=1
 Restart=no

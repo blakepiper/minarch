@@ -1,4 +1,28 @@
 #!/usr/bin/env bash
+check_greetd_conflicts() {
+  local display_manager
+  display_manager=$(systemctl show --property=Id --value display-manager.service 2>/dev/null) || true
+  case $display_manager in
+    ''|display-manager.service|greetd.service) ;;
+    *) die "Display manager already configured: $display_manager. Disable it before enabling greetd." ;;
+  esac
+}
+
+install_greetd() {
+  local config=/etc/greetd/minarch.toml
+  local dropin=/etc/systemd/system/greetd.service.d/50-minarch.conf
+  log 'Enable Minarch password login at boot'
+  install_config "$ROOT/etc/greetd/minarch.toml" "$config" system
+  install_config "$ROOT/etc/systemd/system/greetd.service.d/50-minarch.conf" "$dropin" system
+  if ! sudo cmp -s "$ROOT/etc/greetd/minarch.toml" "$config" ||
+     ! sudo cmp -s "$ROOT/etc/systemd/system/greetd.service.d/50-minarch.conf" "$dropin"; then
+    die 'Minarch login configuration differs. Review the preserved files before enabling greetd.'
+  fi
+  # Enable for the next boot without interrupting the current TTY or X session.
+  sudo systemctl enable greetd.service
+  sudo systemctl set-default graphical.target
+}
+
 install_system() {
   local file unit
   log 'System configuration (existing differences are preserved by default)'
@@ -10,6 +34,7 @@ install_system() {
   # Input rules apply on next boot/replug; do not disrupt a live input session.
   install_config "$ROOT/etc/firefox/policies/policies.json" /etc/firefox/policies/policies.json system
   install_config "$ROOT/etc/fonts/conf.d/52-minarch-fonts.conf" /etc/fonts/conf.d/52-minarch-fonts.conf system
+  install_config "$ROOT/etc/systemd/system-sleep/minarch-unlock" /usr/lib/systemd/system-sleep/minarch-unlock system
   # Keep manual pages available without periodic index maintenance.
   sudo systemctl mask --now man-db.timer
   # Only enable periodic discard if a device advertises discard support.

@@ -9,11 +9,15 @@ pass() { printf 'PASS: %s\n' "$*"; }
 fail() { printf 'FAIL: %s\n' "$*" >&2; failures=$((failures + 1)); }
 check_file() { [[ -f $1 ]] && pass "$1" || fail "Missing $1"; }
 [[ -f /etc/arch-release ]] && pass Arch || fail 'Arch not detected'
-for executable in Xorg startx oxwm st dmenu dmenu_run rofi thunar dunst notify-send firefox vim codex maim slop xclip \
+for executable in Xorg startx greetd tuigreet oxwm st dmenu dmenu_run rofi thunar dunst notify-send firefox vim codex maim slop xclip \
   clipmenu clipmenud xss-lock xsecurelock picom gammastep fastfetch xkbcomp wpctl pipewire wireplumber playerctl git rg fd fc-match; do
   command -v "$executable" >/dev/null && pass "$executable" || fail "Missing $executable"
 done
 check_file "$HOME/.xinitrc"
+check_file /etc/greetd/minarch.toml
+check_file /etc/systemd/system/greetd.service.d/50-minarch.conf
+[[ -x /usr/lib/systemd/system-sleep/minarch-unlock ]] && pass 'Unlock resume hook' || fail 'Unlock resume hook is not executable'
+systemctl is-enabled --quiet greetd.service && pass 'greetd enabled' || fail 'greetd is not enabled'
 check_file /usr/share/blesh/ble.sh
 check_file /usr/share/minarch/bashrc
 check_file /etc/fonts/conf.d/52-minarch-fonts.conf

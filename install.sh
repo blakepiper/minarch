@@ -47,6 +47,7 @@ source "$ROOT/install/hardware.sh"
 source "$ROOT/install/packages.sh"
 # shellcheck source=install/system.sh
 source "$ROOT/install/system.sh"
+check_greetd_conflicts
 install_packages
 install_local_packages
 install_system
@@ -55,5 +56,7 @@ log 'Validation'
 oxwm --validate "${XDG_CONFIG_HOME:-$HOME/.config}/oxwm/config.lua"
 codex --version
 pacman -Q > "$STATE/packages-installed.txt"
+install_greetd
 printf '\nMinarch installed. Review preserved-file messages above, then reboot if the kernel changed.\n'
-printf 'Log in on a TTY and run startx. Run ~/minarch/tests/smoke.sh after installation.\n'
+printf 'Reboot to sign in at the Minarch login screen.\n'
+printf 'Run ~/minarch/tests/smoke.sh after installation.\n'

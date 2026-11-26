@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import tomllib
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -513,6 +514,28 @@ class HardwareSelection(Sandbox):
         self.assertNotIn("intel-media-driver", run(args, env=self.env).stdout)
 
 
+class GreeterSetup(Sandbox):
+    def test_greeter_configuration_requires_login_and_starts_x(self):
+        config = tomllib.loads((ROOT / "etc/greetd/minarch.toml").read_text())
+        self.assertNotIn("initial_session", config)
+        self.assertEqual(config["terminal"]["vt"], 1)
+        self.assertEqual(config["default_session"]["user"], "greeter")
+        self.assertIn("--cmd /usr/bin/startx", config["default_session"]["command"])
+
+    def test_conflicting_display_manager_is_rejected(self):
+        args = ["bash", "-euc", '''
+source "$1/install/common.sh"
+source "$1/install/system.sh"
+check_greetd_conflicts
+''', "test", str(ROOT)]
+        self.command("systemctl", 'echo greetd.service\n')
+        run(args, env=self.env)
+        self.command("systemctl", 'echo lightdm.service\n')
+        result = subprocess.run(args, env=self.env, text=True, capture_output=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Display manager already configured: lightdm.service", result.stderr)
+
+
 class SessionStartup(Sandbox):
     def test_requires_real_lock_inhibitor(self):
         # Isolate .xinitrc itself too: skip host xinit hooks and sysfs battery
@@ -570,7 +593,8 @@ class NightLight(Sandbox):
 class RepositoryPolicy(unittest.TestCase):
     def test_manifest_and_firefox(self):
         packages = {line.split("#")[0].strip() for line in (ROOT / "install/packages").read_text().splitlines()}
-        self.assertTrue({"openai-codex", "firefox-ublock-origin", "xsecurelock", "xss-lock"} <= packages)
+        self.assertTrue({"openai-codex", "firefox-ublock-origin", "xsecurelock", "xss-lock",
+                         "greetd", "greetd-tuigreet"} <= packages)
         self.assertIn("git", packages)
         self.assertNotIn("lazygit", packages)
         banned = {"bluez", "blueman", "cups", "avahi", "networkmanager", "wl-clipboard", "sddm", "gnome-keyring"}

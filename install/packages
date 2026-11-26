@@ -1,6 +1,8 @@
 # X11 session and on-demand X utilities
 xorg-server
 xorg-xinit
+greetd
+greetd-tuigreet
 xf86-input-libinput
 xorg-xauth
 xorg-xset
