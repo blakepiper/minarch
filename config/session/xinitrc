@@ -7,6 +7,8 @@ if [[ -d /etc/X11/xinit/xinitrc.d ]]; then
   done
 fi
 export PATH="$HOME/.local/bin:$PATH"
+# Firefox on X11 needs XInput2 events for touchpad swipe-to-navigate.
+export MOZ_USE_XINPUT2=1
 export XDG_CURRENT_DESKTOP=OXWM
 export XDG_SESSION_TYPE=x11
 export CM_LAUNCHER=dmenu

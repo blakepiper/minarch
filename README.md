@@ -194,7 +194,8 @@ machine after a full browser restart.
 - Firefox Home content is disabled, the homepage and startup page are blank, and
   new tabs open to a blank page.
 - DuckDuckGo is the default search engine; horizontal swipe gestures navigate
-  backward and forward through page history.
+  backward and forward through page history. X11 touchpad swipe input is enabled
+  through XInput2 and Firefox's swipe tracker.
 - DNS prediction, link prefetching, and speculative connections disabled.
 - Firefox AI features blocked by the existing AIControls policy.
 

@@ -73,6 +73,10 @@
       "browser.gesture.swipe.right": {
         "Value": "Browser:ForwardOrForwardDuplicate",
         "Status": "locked"
+      },
+      "widget.disable-swipe-tracker": {
+        "Value": false,
+        "Status": "locked"
       }
     },
     "AIControls": {
