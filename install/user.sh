@@ -2,7 +2,7 @@
 install_user() {
   local config_home=${XDG_CONFIG_HOME:-"$HOME/.config"} data_home=${XDG_DATA_HOME:-"$HOME/.local/share"} file
   log 'User configuration and helpers'
-  # Upgrade the stock files shipped before display zoom and bar underlines.
+  # Upgrade stock files from before the desktop defaults changed.
   # Edited copies still follow the normal preservation and backup rules.
   if [[ ${REPLACE_CONFIG:-false} != true ]]; then
     upgrade_shipped_file "$ROOT/config/oxwm/config.lua" "$config_home/oxwm/config.lua" \
@@ -11,11 +11,14 @@ install_user() {
       08249da07775ece4975c5bfba6dc780659f29262fd85ad4c978e9795ea79d92b
     upgrade_shipped_file "$ROOT/bin/minarch-hardware-hotplug" "$HOME/.local/bin/minarch-hardware-hotplug" \
       e8d7cd46dd856cb0f76b04ea15f68f21a9b95ce66aeeb1ddee0b34522198b3fe
+    upgrade_shipped_file "$ROOT/config/bash/bashrc" "$HOME/.bashrc" \
+      faf4c79b4d19f1a2625b1610b36efa62965b4e2a1a50add05db55c36c1742583
   fi
   install_config "$ROOT/config/minarch/hardware.conf" "$config_home/minarch/hardware.conf"
   install_config "$ROOT/config/oxwm" "$config_home/oxwm"
   install_config "$ROOT/config/picom/picom.conf" "$config_home/picom/picom.conf"
   install_config "$ROOT/config/fastfetch/config.jsonc" "$config_home/fastfetch/config.jsonc"
+  install_config "$ROOT/config/gtk-3.0/settings.ini" "$config_home/gtk-3.0/settings.ini"
   install_config "$ROOT/config/mimeapps.list" "$config_home/mimeapps.list"
   install_config "$ROOT/config/session/xinitrc" "$HOME/.xinitrc"
   install_config "$ROOT/config/bash/bashrc" "$HOME/.bashrc"

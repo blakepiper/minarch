@@ -168,12 +168,33 @@ class ConfigSafety(Sandbox):
         backup = next(target.parent.glob("config.lua.backup.*/original"))
         self.assertEqual(backup.read_text(), previous)
 
+    def test_rerun_upgrades_stock_update_alias_and_keeps_gtk_preferences(self):
+        bashrc = self.home / ".bashrc"
+        current = (ROOT / "config/bash/bashrc").read_text()
+        start = current.index("if command -v yay")
+        end = current.index("if [[ -r /usr/share/bash-completion", start)
+        previous = current[:start] + "alias update='yay -Syu --noconfirm'\n" + current[end:]
+        bashrc.write_text(previous)
+        gtk = self.home / ".config/gtk-3.0/settings.ini"
+        gtk.parent.mkdir(parents=True)
+        custom = "[Settings]\ngtk-application-prefer-dark-theme=false\n"
+        gtk.write_text(custom)
+        for _ in range(2):
+            run([str(ROOT / "install.sh"), "--config-only"], env=self.env)
+            self.assertEqual(bashrc.read_text(), current)
+            self.assertEqual(gtk.read_text(), custom)
+        backups = list(self.home.glob(".bashrc.backup.*/original"))
+        self.assertEqual(len(backups), 1)
+        self.assertEqual(backups[0].read_text(), previous)
+
     def test_complete_user_seed(self):
         data_home = self.home / "data with spaces"
         self.env["XDG_DATA_HOME"] = str(data_home)
         run([str(ROOT / "install.sh"), "--config-only"], env=self.env)
         run([str(ROOT / "install.sh"), "--config-only"], env=self.env)
         self.assertTrue((self.home / ".xinitrc").is_file())
+        self.assertEqual((self.home / ".config/gtk-3.0/settings.ini").read_bytes(),
+                         (ROOT / "config/gtk-3.0/settings.ini").read_bytes())
         self.assertTrue((self.home / ".local/bin/minarch-hardware-hotplug").stat().st_mode & 0o111)
         self.assertTrue((self.home / ".local/bin/xsecurelock-without-picom").stat().st_mode & 0o111)
         self.assertTrue((self.home / ".local/lib/clipmenu-text-probe/xsel").stat().st_mode & 0o111)
