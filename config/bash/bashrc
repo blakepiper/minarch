@@ -10,6 +10,7 @@ fi
 export PATH="$HOME/.local/bin:$PATH"
 export EDITOR=vim
 export VISUAL=vim
+alias update='yay -Syu --noconfirm'
 if [[ -r /usr/share/bash-completion/bash_completion ]]; then
   # Provided by the target system's bash-completion package.
   # shellcheck disable=SC1091

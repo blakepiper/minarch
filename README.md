@@ -417,6 +417,9 @@ RAM, CPU, boot-time, or battery-life claims.
 
 ## Updates and configuration ownership
 
+If you have Yay installed, run `update` in the terminal to upgrade repository
+and AUR packages with `yay -Syu --noconfirm`. Sudo may still ask for your password.
+
 ```sh
 sudo pacman -Syu
 git -C ~/minarch pull --ff-only

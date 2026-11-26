@@ -3,6 +3,7 @@
 # Preserve the user's prompt, aliases, completion, and other shell settings.
 # shellcheck disable=SC1090
 [[ ! -r ~/.bashrc ]] || source ~/.bashrc
+alias update >/dev/null 2>&1 || alias update='yay -Syu --noconfirm'
 # The user's startup may already have loaded ble.sh.
 if [[ ! ${BLE_VERSION-} && -r /usr/share/blesh/ble.sh ]]; then
   # shellcheck disable=SC1091,SC1094
