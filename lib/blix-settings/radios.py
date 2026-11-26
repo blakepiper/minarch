@@ -274,6 +274,7 @@ class Bluetooth:
         self.changed, self.notify = changed, notify
         self.agent = PairingAgent(self.bus, prompt, notify)
         self.scanning = None
+        self.scan_timeout = None
         try:
             self.manager = dbus.Interface(self.bus.get_object("org.bluez", "/org/bluez"), "org.bluez.AgentManager1")
             self.manager.RegisterAgent(self.agent.__dbus_object_path__, "KeyboardDisplay", timeout=3)
@@ -314,9 +315,16 @@ class Bluetooth:
             self.stop_scan()
         self.interface(path, "org.bluez.Adapter1").StartDiscovery(timeout=3)
         self.scanning = path
-        GLib.timeout_add_seconds(30, self.stop_scan)
+        self.scan_timeout = GLib.timeout_add_seconds(30, self.scan_expired)
+
+    def scan_expired(self):
+        self.scan_timeout = None
+        return self.stop_scan()
 
     def stop_scan(self):
+        if self.scan_timeout is not None:
+            GLib.source_remove(self.scan_timeout)
+            self.scan_timeout = None
         if self.scanning:
             path, self.scanning = self.scanning, None
             try:

@@ -23,6 +23,7 @@ def main(gui=True):
     parser.add_argument("action", nargs="?", choices=["display-hotplug", "apply-session", "apply-input", "display-preview", "prepare-picom", "nightlight", "nightlight-level", "power-menu", "power-mode", "power-modes"])
     parser.add_argument("profile", nargs="?", choices=["performance", "balanced", "power-saver"])
     parser.add_argument("--intensity", type=int, help="Night light warmth from 0 (off) to 100")
+    parser.add_argument("--fresh-session", action="store_true", help="Reapply the saved display layout when X starts")
     parser.add_argument("--demo", action="store_true", help="Preview the interface with simulated devices; changes stay in memory")
     parser.add_argument("--page", choices=["display", "audio", "network", "bluetooth", "power", "input", "shortcuts", "about"])
     args = parser.parse_args()
@@ -31,7 +32,7 @@ def main(gui=True):
             from ui import Application
             sys.exit(Application(demo=args.demo).run([sys.argv[0]] + ([args.page] if args.page else [])))
         if args.action == "display-hotplug":
-            sys.exit(apply_saved_display())
+            sys.exit(apply_saved_display(fresh_session=args.fresh_session))
         elif args.action == "apply-session":
             if os.environ.get("DISPLAY"):
                 apply_session_preferences()

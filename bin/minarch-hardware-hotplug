@@ -74,9 +74,12 @@ apply_keyboard() {
 
 configure_external_monitor() {
   local outputs status=0
-  local -a settings=()
+  local -a startup_args=() settings=()
   if "$has_settings"; then
-    blix-settings-apply display-hotplug || status=$?
+    if (( once_mode )); then
+      startup_args+=(--fresh-session)
+    fi
+    blix-settings-apply display-hotplug "${startup_args[@]}" || status=$?
     # A saved layout or an active preview takes precedence over the profile.
     [[ $status == 2 ]] || return 0
   fi

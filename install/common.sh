@@ -7,13 +7,18 @@ read_manifest() { sed 's/#.*//; /^[[:space:]]*$/d' "$1"; }
 # Whole directories are managed as a unit, including dotfiles.
 # Scope is user or system; system operations use sudo, never run makepkg as root.
 install_config() {
-  local source=$1 target=$2 scope=${3:-user} parent stage backup
+  local source=$1 target=$2 scope=${3:-user} parent stage backup source_mode target_mode
   local -a privilege=()
   [[ $scope != system ]] || privilege=(sudo)
   parent=$(dirname -- "$target")
   "${privilege[@]}" mkdir -p -- "$parent"
   if [[ -e $target || -L $target ]]; then
-    if "${privilege[@]}" diff -qr -- "$source" "$target" >/dev/null 2>&1; then
+    if [[ -f $source ]]; then
+      source_mode=$("${privilege[@]}" stat -Lc '%a' -- "$source")
+      target_mode=$("${privilege[@]}" stat -Lc '%a' -- "$target" 2>/dev/null) || target_mode=''
+    fi
+    if [[ ${source_mode:-} == "${target_mode:-}" ]] &&
+       "${privilege[@]}" diff -qr -- "$source" "$target" >/dev/null 2>&1; then
       printf 'Unchanged: %s\n' "$target"
       return
     fi

@@ -9,8 +9,11 @@ import sys
 import tempfile
 import tomllib
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "lib/blix-settings"))
+import core
 
 
 def run(args, **kwargs):
@@ -137,6 +140,18 @@ class ConfigSafety(Sandbox):
         backup = next(self.home.glob("config.backup.*/original"))
         self.assertTrue(backup.is_symlink())
         self.assertEqual(target.read_text(), "new")
+
+    def test_matching_helper_contents_with_wrong_mode(self):
+        source = ROOT / "bin/minarch-lock"
+        target = self.home / "minarch-lock"
+        target.write_bytes(source.read_bytes())
+        target.chmod(0o644)
+        self.assertIn("Preserved:", self.install(source, target).stdout)
+        self.install(source, target, replace=True)
+        self.assertEqual(target.stat().st_mode, source.stat().st_mode)
+        backup = next(self.home.glob("minarch-lock.backup.*/original"))
+        self.assertEqual(backup.stat().st_mode & 0o777, 0o644)
+        self.assertIn("Unchanged:", self.install(source, target, replace=True).stdout)
 
     def test_complete_user_seed(self):
         data_home = self.home / "data with spaces"
@@ -396,6 +411,53 @@ printf 'SUBSYSTEM=backlight\nACTION=change\n\n'
         self.assertIn('--subsystem-match=backlight', watchers[0])
         self.assertEqual(rows.count('settings apply-input'), 1)
         self.assertTrue(any('-set _MINARCH_BRIGHTNESS refresh' in row for row in rows))
+
+    def test_startup_forces_saved_display_and_preserves_profile_fallback(self):
+        self.command("blix-settings-apply", 'echo "settings $*" >> "$TEST_CALLS"\nexit 2\n')
+        run([str(ROOT / "bin/minarch-hardware-hotplug"), "--once"], env=self.env)
+        rows = self.calls.read_text().splitlines()
+        self.assertIn("settings display-hotplug --fresh-session", rows)
+        self.assertIn("xrandr --output DP-3 --mode 2560x1440 --rate 75 --same-as eDP-2", rows)
+
+
+class SavedDisplays(Sandbox):
+    @staticmethod
+    def display(name):
+        return {"name": name, "connected": True, "modes": {"1920x1080": ["60"]},
+                "preferred": "1920x1080"}
+
+    def test_new_outputs_follow_saved_extent_in_any_connector_order(self):
+        saved_output = self.display("HDMI-1")
+        saved = core.default_display([saved_output], {"layout": "extend"})
+        saved["outputs"][0].update(x=200, scale=1.5)
+        available = [self.display("DP-1"), saved_output, self.display("DP-2")]
+        restored = core.saved_display(available, saved)
+        self.assertEqual({item["name"]: item["x"] for item in restored["outputs"]},
+                         {"HDMI-1": 200, "DP-1": 1480, "DP-2": 3400})
+
+    def test_saved_mirror_preserves_scale(self):
+        available = [self.display("HDMI-1"), self.display("DP-1")]
+        saved = core.default_display(available, {"layout": "extend"})
+        saved["layout"] = "mirror"
+        for item in saved["outputs"]:
+            item.update(scale=1.5, x=0)
+        restored = core.saved_display(available, saved)
+        self.assertEqual([item["scale"] for item in restored["outputs"]], [1.5, 1.5])
+
+    def test_fresh_x_session_reapplies_cached_layout_on_same_display(self):
+        available = [self.display("HDMI-1")]
+        saved = core.default_display(available, {"layout": "extend"})
+        with (patch.dict(os.environ, dict(self.env, DISPLAY=":0")),
+              patch.object(core, "outputs", return_value=available),
+              patch.object(core, "command") as command):
+            core.Preferences().update("display", saved)
+            self.assertEqual(core.apply_saved_display(), 0)
+            self.assertEqual(core.apply_saved_display(), 0)
+            self.assertEqual(command.call_count, 1)
+            self.assertEqual(core.apply_saved_display(fresh_session=True), 0)
+            self.assertEqual(command.call_count, 2)
+            self.assertEqual(core.apply_saved_display(), 0)
+            self.assertEqual(command.call_count, 2)
 
 
 class Screenshots(Sandbox):

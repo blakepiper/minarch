@@ -536,7 +536,7 @@ def saved_display(available, saved):
     if saved.get("layout") not in ("mirror", "extend"):
         raise SettingsError("The saved display layout is invalid.")
     base["layout"] = saved["layout"]
-    right = 0
+    new_outputs = []
     for item in base["outputs"]:
         actual = next(output for output in available if output["name"] == item["name"])
         remembered = by_name.get(item["name"])
@@ -545,9 +545,13 @@ def saved_display(available, saved):
             item["mode"] = preferred_mode(actual, remembered.get("mode"))
             item["rate"] = choose_rate(actual, item["mode"], remembered.get("rate"))
         else:
-            item.update(enabled=True, primary=False, x=right, y=0)
-        if item["enabled"]:
-            right = max(right, item["x"] + mode_size(item["mode"], item["rotation"], item["scale"])[0])
+            item.update(enabled=True, primary=False)
+            new_outputs.append(item)
+    right = max((item["x"] + mode_size(item["mode"], item["rotation"], item["scale"])[0]
+                 for item in base["outputs"] if item["enabled"] and item["name"] in by_name), default=0)
+    for item in new_outputs:
+        item.update(x=right, y=0)
+        right += mode_size(item["mode"], item["rotation"], item["scale"])[0]
     active = [item for item in base["outputs"] if item["enabled"]]
     if not active:
         base["outputs"][0]["enabled"] = True
@@ -562,11 +566,11 @@ def saved_display(available, saved):
         mode = primary["mode"] if primary["mode"] in common else max(common, key=lambda name: math.prod(map(int, name.split("x"))))
         for item in active:
             actual = next(output for output in available if output["name"] == item["name"])
-            item.update(mode=mode, rate=choose_rate(actual, mode, item["rate"]), x=0, y=0, scale=1.0)
+            item.update(mode=mode, rate=choose_rate(actual, mode, item["rate"]), x=0, y=0)
     return validate_display(base, available)
 
 
-def apply_saved_display():
+def apply_saved_display(fresh_session=False):
     root = runtime_root()
     marker = read_json(root / "display-preview.json")
     if marker and marker.get("expires", 0) > time.time():
@@ -578,10 +582,13 @@ def apply_saved_display():
     saved = Preferences().read().get("display")
     if not saved:
         return 2
+    cache = root / "display-cache.json"
+    if fresh_session:
+        cache.unlink(missing_ok=True)
     available = outputs()
     fingerprint = hashlib.sha256(json.dumps([saved, [(item["name"], item["connected"], item["modes"])
         for item in available], os.environ.get("DISPLAY")], sort_keys=True).encode()).hexdigest()
-    if read_json(root / "display-cache.json").get("fingerprint") == fingerprint:
+    if read_json(cache).get("fingerprint") == fingerprint:
         return 0
     plan = saved_display(available, saved)
     if plan["layout"] == "mirror":
@@ -608,7 +615,7 @@ def apply_saved_display():
                 retry.append(args[index])
                 index += 1
         command("xrandr", *retry)
-    atomic_json(root / "display-cache.json", {"fingerprint": fingerprint})
+    atomic_json(cache, {"fingerprint": fingerprint})
     return 0
 
 
