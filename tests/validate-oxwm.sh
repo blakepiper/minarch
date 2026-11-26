@@ -2,6 +2,7 @@
 set -euo pipefail
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 command -v zig >/dev/null || { echo 'Install zig and OXWM build dependencies first.' >&2; exit 1; }
+[[ $(zig version) == 0.16.0 ]] || { echo "OXWM validation requires Zig 0.16.0." >&2; exit 1; }
 work=$(mktemp -d)
 trap 'rm -rf -- "$work"' EXIT
 revision=$(awk '$1 == "oxwm-git" {print $3}' "$root/install/packages-aur")

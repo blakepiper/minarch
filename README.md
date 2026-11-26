@@ -478,8 +478,9 @@ minarch-stats                   # on-demand system audit
 ```
 
 Repository checks require Python and ShellCheck. OXWM build checks require
-Zig and its build dependencies. The nested-X test also needs `xorg-server-xvfb`
-and the installed X11 tools; it does not operate on the main X session.
+Zig 0.16.0 and the X11 build dependencies. The installer downloads and verifies
+this Zig release for the OXWM package build. The nested-X test also needs
+`xorg-server-xvfb` and the installed X11 tools; it does not operate on the main X session.
 Tests do not perform real suspend, reboot, or poweroff.
 
 The September 28 checks passed 23 isolated integration tests, repository shell

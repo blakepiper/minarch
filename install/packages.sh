@@ -13,11 +13,14 @@ build_package() (
   set -euo pipefail
   local name=$1 recipe=$2 upstream=${3:--} identity stamp work installed
   local ble_contrib_rev=d2109203480a7dfe1dead5f5f8f9f15a9146c90d
+  local oxwm_zig_version=0.16.0
+  local oxwm_zig_sha256=70e49664a74374b48b51e6f3fdfbf437f6395d42509050588bd49abe52ba3d00
   stamp="$STATE/builds/$name"
   mkdir -p "$STATE/builds"
   # Invalidate stamps written when --needed could skip changed same-version builds.
   identity="reinstall-v2:$recipe:$upstream"
   if [[ $name == oxwm-git ]]; then
+    identity+=":zig-$oxwm_zig_version:$oxwm_zig_sha256"
     identity+=":$(sha256sum "$ROOT"/config/oxwm-patches/*.patch | sha256sum | cut -d ' ' -f1)"
   elif [[ $name == blesh-git ]]; then
     identity+=":$ble_contrib_rev"
@@ -40,6 +43,17 @@ build_package() (
       # Pin the VCS source while retaining the reviewed AUR build recipe.
       sed -i "s|https://github.com/tonybanters/oxwm.git\"|https://github.com/tonybanters/oxwm.git#commit=$upstream\"|" "$work/PKGBUILD"
       grep -Fq "#commit=$upstream" "$work/PKGBUILD" || die 'OXWM source pin failed'
+      # The pinned source uses Zig 0.16 features removed in Zig 0.17.
+      sed -i "/^makedepends=/s/'zig' //" "$work/PKGBUILD"
+      cat >> "$work/PKGBUILD" <<TOOLCHAIN
+
+source+=("https://ziglang.org/download/$oxwm_zig_version/zig-x86_64-linux-$oxwm_zig_version.tar.xz")
+sha256sums+=("$oxwm_zig_sha256")
+
+zig() {
+    "\$srcdir/zig-x86_64-linux-$oxwm_zig_version/zig" "\$@"
+}
+TOOLCHAIN
       mkdir "$work/minarch-patches"
       cp "$ROOT"/config/oxwm-patches/*.patch "$work/minarch-patches/"
       cat >> "$work/PKGBUILD" <<'PREPARE'
