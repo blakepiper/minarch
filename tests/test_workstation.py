@@ -438,7 +438,19 @@ class SavedDisplays(Sandbox):
         available = [self.display("DP-1"), saved_output, self.display("DP-2")]
         restored = core.saved_display(available, saved)
         self.assertEqual({item["name"]: item["x"] for item in restored["outputs"]},
-                         {"HDMI-1": 200, "DP-1": 1480, "DP-2": 3400})
+                         {"HDMI-1": 200, "DP-1": 1480, "DP-2": 3016})
+
+    def test_fresh_session_defaults_to_125_percent_zoom(self):
+        available = [self.display("HDMI-1"), self.display("DP-1")]
+        with (patch.dict(os.environ, self.env),
+              patch.object(core, "outputs", return_value=available),
+              patch.object(core, "command") as command):
+            self.assertEqual(core.apply_saved_display(fresh_session=True), 0)
+            self.assertEqual(core.apply_saved_display(), 0)
+            command.assert_called_once()
+            args = command.call_args.args
+            self.assertEqual(args.count("1536x864"), 2)
+            self.assertIn("1536x0", args)
 
     def test_saved_mirror_preserves_scale(self):
         available = [self.display("HDMI-1"), self.display("DP-1")]

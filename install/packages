@@ -61,8 +61,12 @@ picom
 polkit
 # Audio and media keys
 pipewire
+pipewire-audio
+pipewire-alsa
 wireplumber
 pipewire-pulse
+alsa-ucm-conf
+sof-firmware
 playerctl
 # Blix Settings runtime and audio utilities
 gtk3

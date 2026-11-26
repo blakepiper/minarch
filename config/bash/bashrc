@@ -10,7 +10,11 @@ fi
 export PATH="$HOME/.local/bin:$PATH"
 export EDITOR=vim
 export VISUAL=vim
-alias update='yay -Syu --noconfirm'
+if command -v yay >/dev/null 2>&1; then
+  alias update='yay -Syu --noconfirm'
+else
+  alias update='sudo pacman -Syu --noconfirm'
+fi
 if [[ -r /usr/share/bash-completion/bash_completion ]]; then
   # Provided by the target system's bash-completion package.
   # shellcheck disable=SC1091

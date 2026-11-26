@@ -392,7 +392,9 @@ def default_display(available, display=None):
     primary = next((item for item in connected if item["name"] == display.get("primaryOutput")), connected[0])
     connected = [primary] + [item for item in connected if item is not primary]
     patterns = [display.get("externalOutput") or ""] + display.get("additionalExternalOutputs", [])
-    mirrored = display.get("layout") == "mirror" and any(
+    mirrored = display.get("layout") == "mirror" and (
+        not display.get("primaryOutput") or primary["name"] == display["primaryOutput"]
+    ) and any(
         item != primary and any(fnmatch.fnmatchcase(item["name"], pattern) for pattern in patterns) for item in connected)
     selected = connected if not mirrored else [primary] + [item for item in connected if item != primary and
         any(fnmatch.fnmatchcase(item["name"], pattern) for pattern in patterns)]
@@ -407,7 +409,7 @@ def default_display(available, display=None):
         enabled = item in selected
         mode = preferred_mode(item, mirror_mode if mirrored else None)
         rotation = display.get("primaryRotation", "normal") if item == primary else "normal"
-        scale = 1.0
+        scale = 1.25
         if item == primary and not mirrored and display.get("primaryScaleFrom"):
             logical_width = int(display["primaryScaleFrom"].split("x")[0])
             scale = mode_size(mode, rotation)[0] / logical_width
@@ -580,17 +582,17 @@ def apply_saved_display(fresh_session=False):
         except (ProcessLookupError, ValueError, KeyError):
             marker = {}
     saved = Preferences().read().get("display")
-    if not saved:
-        return 2
     cache = root / "display-cache.json"
     if fresh_session:
         cache.unlink(missing_ok=True)
     available = outputs()
-    fingerprint = hashlib.sha256(json.dumps([saved, [(item["name"], item["connected"], item["modes"])
+    if not any(item["connected"] and item["modes"] for item in available):
+        return 2
+    plan = saved_display(available, saved) if saved else validate_display(default_display(available), available)
+    fingerprint = hashlib.sha256(json.dumps([plan, [(item["name"], item["connected"], item["modes"])
         for item in available], os.environ.get("DISPLAY")], sort_keys=True).encode()).hexdigest()
     if read_json(cache).get("fingerprint") == fingerprint:
         return 0
-    plan = saved_display(available, saved)
     if plan["layout"] == "mirror":
         # Preserve the existing dock-link recovery policy on a new topology.
         # The fingerprint prevents resetting again for duplicate notifications.

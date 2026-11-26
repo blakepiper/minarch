@@ -1,12 +1,12 @@
 # Minarch: pinned upstream st with locally reviewed scrollback and URL changes.
 pkgname=st-minarch
 pkgver=0.9.3
-pkgrel=6
+pkgrel=7
 pkgdesc='Simple X11 terminal with scrollback, and clickable URLs'
 arch=('x86_64')
 url='https://st.suckless.org/'
 license=('MIT')
-depends=('libx11' 'libxft' 'libxext' 'fontconfig' 'ncurses' 'bash' 'blesh-git')
+depends=('libx11' 'libxft' 'libxext' 'fontconfig' 'ncurses' 'bash' 'blesh-git' 'ttf-jetbrains-mono-nerd')
 provides=('st')
 conflicts=('st')
 source=("https://dl.suckless.org/st/st-$pkgver.tar.gz" 'config.h' '0001-scrollback-and-urls.patch' 'minarch-shell' 'bashrc')

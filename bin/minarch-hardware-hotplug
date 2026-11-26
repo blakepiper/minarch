@@ -79,8 +79,10 @@ configure_external_monitor() {
     if (( once_mode )); then
       startup_args+=(--fresh-session)
     fi
-    blix-settings-apply display-hotplug "${startup_args[@]}" || status=$?
-    # A saved layout or an active preview takes precedence over the profile.
+    BLIX_DISPLAY_LAYOUT=mirror BLIX_PRIMARY_OUTPUT="$mirror_source" BLIX_EXTERNAL_OUTPUT="$mirror_output" \
+      BLIX_MIRROR_MODE="$mirror_mode" BLIX_MIRROR_RATE="$mirror_rate" \
+      blix-settings-apply display-hotplug "${startup_args[@]}" || status=$?
+    # Keep the shell mirror fallback for sessions without a usable settings plan.
     [[ $status == 2 ]] || return 0
   fi
   [[ -n $mirror_output && -n $mirror_source ]] || return 0

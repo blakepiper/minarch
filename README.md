@@ -246,8 +246,9 @@ and the Mozilla Add-ons API on 2026-09-28. Use current Arch Firefox;
 
 Thunar opens folders on demand and is the default directory handler. Firefox opens web
 links, mpv opens audio/video, and feh opens images. Removable media is mounted
-manually; no automounter is included. PipeWire, WirePlumber, and pipewire-pulse
-handle audio. Media and brightness bindings are listed above.
+manually; no automounter is included. The installer enables the PipeWire
+sockets and WirePlumber for the user running it. ALSA and PulseAudio clients
+use PipeWire. Media and brightness bindings are listed above.
 
 Gammastep is installed for color-temperature adjustment, with no default
 schedule or autostart. The X session uses the default root background.
@@ -272,7 +273,8 @@ An empty `mirror_mode` selects the display's automatic mode; an empty
 be connected. Restart `minarch-hardware-hotplug.service` with
 `systemctl --user restart minarch-hardware-hotplug.service` to load profile edits.
 Missing profiles make the helper a no-op; differing installed profiles are
-preserved under the normal installer rules.
+preserved under the normal installer rules. Displays default to 125% zoom.
+A layout saved in Blix Settings takes precedence for its configured displays.
 
 Conditional packages in [install/hardware.sh](install/hardware.sh):
 
@@ -348,7 +350,7 @@ add no idle process merely by being installed.
 | Lock/suspend | xsecurelock, xss-lock | Secure X locker with logind readiness handoff; no idle animation or screenshot background |
 | Compositor | picom | Compositing with fully opaque windows and no visual effects; stopped during XSecureLock |
 | Power authorization | polkit | Required logind backend for normal-user suspend/reboot/poweroff; D-Bus activated, no GUI agent or custom rules |
-| Audio | pipewire, wireplumber, pipewire-pulse | Reliable normal application audio; only intentional audio user services |
+| Audio | pipewire, pipewire-audio, pipewire-alsa, pipewire-pulse, wireplumber, alsa-ucm-conf, sof-firmware | Device profiles and firmware, with user-session routing for ALSA and PulseAudio clients |
 | Media keys | playerctl | On-demand MPRIS transport commands |
 | Fonts | ttf-jetbrains-mono-nerd, noto-fonts, noto-fonts-emoji | Requested coding font, basic multilingual/emoji coverage |
 | Audit | mesa-utils, pciutils, psmisc | glxinfo, lspci and pstree; on demand |
@@ -389,7 +391,7 @@ invalidated once to recover builds that may previously have been skipped.
 | `minarch-picom.service` / picom | During X except while locked | Compositing with fully opaque windows; stopped before XSecureLock and restarted after unlock |
 | `minarch-nightlight.service` | At X startup, on setting changes, and after display hotplug | Runs Gammastep once to apply or reset display warmth |
 | `dunst.service` | From the first notification until X session shutdown | Shows desktop notifications, including failures from shortcut actions |
-| `pipewire.socket`, `pipewire-pulse.socket` | Started with the X session | On-demand native/Pulse audio endpoints |
+| `pipewire.socket`, `pipewire-pulse.socket` | Enabled for the installing user | On-demand native/Pulse audio endpoints |
 | `wireplumber.service` and PipeWire audio processes | User audio session | Device/session routing and reliable browser audio |
 
 The session target binds to xss-lock. When its X connection disappears, the
@@ -417,8 +419,9 @@ RAM, CPU, boot-time, or battery-life claims.
 
 ## Updates and configuration ownership
 
-If you have Yay installed, run `update` in the terminal to upgrade repository
-and AUR packages with `yay -Syu --noconfirm`. Sudo may still ask for your password.
+Run `update` in the terminal to upgrade packages. With Yay installed, it updates
+repository and AUR packages. Otherwise it uses `sudo pacman -Syu --noconfirm`
+for repository packages. Sudo may still ask for your password.
 
 ```sh
 sudo pacman -Syu
@@ -505,7 +508,7 @@ lid/suspend/resume, GPU acceleration, display/input hotplug, audio, and brightne
 | Lock/session | Inspect `journalctl --user -u minarch-lock.service` and `systemctl --user status minarch-session.target`; confirm DISPLAY and XDG_SESSION_ID in `systemctl --user show-environment`. |
 | st | Check `fc-match 'JetBrainsMono Nerd Font'`, `locale`, and `infocmp st-256color`; rerun the installer after source/config changes. |
 | Firefox | Restart fully, inspect `about:policies` for errors and `about:addons` for the extensions. |
-| Audio | Run `wpctl status` and inspect user PipeWire/WirePlumber units. |
+| Audio | Reboot after installing sound firmware. If only Dummy Output appears, check `cat /proc/asound/cards` for kernel-detected cards and `wpctl status` for available outputs. Inspect `journalctl --user -b -u wireplumber.service` for routing errors. |
 | Network | Inspect your existing stack; use `nmcli` with NetworkManager. |
 | Microcode | Check that the bootloader loads the installed microcode; inspect `journalctl -k -b`. |
 

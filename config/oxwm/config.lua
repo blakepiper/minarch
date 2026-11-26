@@ -32,6 +32,7 @@ if battery and battery:match("^[%w_%-]+$") then
         full = "Bat {}% full",
         interval = 30,
         color = block_foreground,
+        underline = true,
         click = "blix-settings-apply power-menu",
       }))
     end
@@ -43,6 +44,7 @@ table.insert(blocks, oxwm.bar.block.shell({
   interval = 0,
   refresh_property = "_MINARCH_VOLUME",
   color = block_foreground,
+  underline = true,
   click = {
     command = "wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ {}%",
     slider = { label = "Volume", min = 0, max = 100 },
@@ -56,6 +58,7 @@ if brightness == "backlight" or brightness == "ddc" then
     interval = 0,
     refresh_property = "_MINARCH_BRIGHTNESS",
     color = block_foreground,
+    underline = true,
     click = {
       command = brightness == "ddc" and "minarch-monitor-brightness {}"
         or "brightnessctl --class=backlight --min-value=1 set {}%",
@@ -68,6 +71,7 @@ table.insert(blocks, oxwm.bar.block.datetime({
   date_format = "%a, %b %d - %H:%M",
   interval = 60,
   color = block_foreground,
+  underline = true,
 }))
 oxwm.bar.set_blocks(blocks)
 

@@ -52,6 +52,10 @@ install_packages
 install_local_packages
 install_system
 install_user
+log 'Enable PipeWire audio for the current user'
+if ! systemctl --user enable --now pipewire.socket pipewire-pulse.socket wireplumber.service; then
+  printf 'Audio setup could not start the user units. Check systemctl --user status pipewire.socket pipewire-pulse.socket wireplumber.service.\n' >&2
+fi
 log 'Validation'
 oxwm --validate "${XDG_CONFIG_HOME:-$HOME/.config}/oxwm/config.lua"
 codex --version
