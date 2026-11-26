@@ -75,8 +75,18 @@ SOURCES
   fi
   cd "$work"
   makepkg --syncdeps --cleanbuild --clean
+  local package_list archive
   local -a archives=()
-  mapfile -t archives < <(makepkg --packagelist)
+  package_list=$(makepkg --packagelist) || die "Could not list packages for $name"
+  while IFS= read -r archive; do
+    [[ -n $archive ]] || continue
+    # makepkg can list a debug archive even when it found no debug symbols to package.
+    if [[ ${archive##*/} == "$name-debug-"* && ! -e $archive ]]; then
+      continue
+    fi
+    [[ -f $archive && -r $archive ]] || die "Missing or unreadable package: $archive"
+    archives+=("$archive")
+  done <<< "$package_list"
   ((${#archives[@]})) || die "No package produced for $name"
   # The identity check above already skips unchanged builds. Reinstall changed
   # artifacts even when their pkgver/pkgrel is identical to the installed one.

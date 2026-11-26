@@ -192,6 +192,7 @@ class LocalBuildCache(Sandbox):
         self.command("makepkg", '''
 if [[ $1 == --packagelist ]]; then
   printf '%s/package.pkg.tar.zst\\n' "$PWD"
+  printf '%s/st-minarch-debug-0.9.3-4-x86_64.pkg.tar.zst\\n' "$PWD"
 else
   echo build >> "$TEST_CALLS"
   touch package.pkg.tar.zst
@@ -203,6 +204,10 @@ case $1 in
   -U)
     printf '%s\\n' "$*" >> "$TEST_CALLS"
     [[ ${FAIL_INSTALL:-0} == 0 ]] || exit 1
+    shift 2
+    for archive; do
+      [[ -f $archive ]] || exit 1
+    done
     ;;
   *) exit 2 ;;
 esac
