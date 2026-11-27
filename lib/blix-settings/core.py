@@ -413,6 +413,13 @@ def default_display(available, display=None):
         if item == primary and not mirrored and display.get("primaryScaleFrom"):
             logical_width = int(display["primaryScaleFrom"].split("x")[0])
             scale = mode_size(mode, rotation)[0] / logical_width
+        if not mirrored and rotation == "normal" and item["name"].startswith("eDP-"):
+            width, height = mode_size(mode)
+            logical_width, logical_height = mode_size(mode, scale=scale)
+            panel_mode = f"{logical_width}x{logical_height}"
+            # Keep the same desktop geometry while letting the panel scale.
+            if panel_mode in item["modes"] and width * logical_height == height * logical_width:
+                mode, scale = panel_mode, 1.0
         plan.append({"name": item["name"], "enabled": enabled, "primary": item == primary,
                      "mode": mode, "rate": choose_rate(item, mode, display.get("mirrorRate") if mirrored else None),
                      "rotation": rotation, "scale": scale, "x": 0 if mirrored else x, "y": 0})
@@ -461,6 +468,8 @@ def display_args(plan, snapshot=False):
         args += ["--mode", item["mode"], "--rate", str(item["rate"]), "--rotate", item["rotation"]]
         if snapshot:
             args += ["--transform", item.get("transform", "1,0,0,0,1,0,0,0,1")]
+        elif item["scale"] == 1:
+            args += ["--transform", "none"]
         else:
             width, height = mode_size(item["mode"], item["rotation"], item["scale"])
             args += ["--scale-from", f"{width}x{height}"]

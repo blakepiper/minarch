@@ -467,6 +467,15 @@ class SavedDisplays(Sandbox):
         return {"name": name, "connected": True, "modes": {"1920x1080": ["60"]},
                 "preferred": "1920x1080"}
 
+    def test_internal_panel_mode_preserves_scaled_desktop_geometry(self):
+        output = self.display("eDP-1")
+        output.update(modes={"1920x1200": ["60.00"], "1280x800": ["59.91"]}, preferred="1920x1200")
+        plan = core.default_display([output], {"layout": "extend"})
+        self.assertEqual(core.display_args(plan), [
+            "--output", "eDP-1", "--mode", "1280x800", "--rate", "59.91",
+            "--rotate", "normal", "--transform", "none", "--pos", "0x0", "--primary",
+        ])
+
     def test_new_outputs_follow_saved_extent_in_any_connector_order(self):
         saved_output = self.display("HDMI-1")
         saved = core.default_display([saved_output], {"layout": "extend"})

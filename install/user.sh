@@ -9,6 +9,8 @@ install_user() {
       6d91871191ad6f0ffce40559539d6443f7e81281b7c31f0ea81025af6cbec2df
     upgrade_shipped_file "$ROOT/lib/blix-settings/core.py" "$data_home/minarch/blix-settings/core.py" \
       08249da07775ece4975c5bfba6dc780659f29262fd85ad4c978e9795ea79d92b
+    upgrade_shipped_file "$ROOT/lib/blix-settings/core.py" "$data_home/minarch/blix-settings/core.py" \
+      ee906cfbdb54fed3a1353c9710c395a8a7918b151bab9ae4930638cf91100117
     upgrade_shipped_file "$ROOT/bin/minarch-hardware-hotplug" "$HOME/.local/bin/minarch-hardware-hotplug" \
       e8d7cd46dd856cb0f76b04ea15f68f21a9b95ce66aeeb1ddee0b34522198b3fe
     upgrade_shipped_file "$ROOT/config/session/xinitrc" "$HOME/.xinitrc" \

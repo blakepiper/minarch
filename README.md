@@ -284,6 +284,8 @@ be connected. Restart `minarch-hardware-hotplug.service` with
 `systemctl --user restart minarch-hardware-hotplug.service` to load profile edits.
 Missing profiles make the helper a no-op; differing installed profiles are
 preserved under the normal installer rules. Displays default to 125% zoom.
+An unrotated eDP panel in an extended layout uses panel scaling when it advertises
+a mode matching the scaled desktop size and the original aspect ratio.
 A layout saved in Blix Settings takes precedence for its configured displays.
 
 Conditional packages in [install/hardware.sh](install/hardware.sh):
