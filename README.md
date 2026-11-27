@@ -363,10 +363,11 @@ add no idle process merely by being installed.
 | Lock/suspend | xsecurelock, xss-lock | Secure X locker with logind readiness handoff; no idle animation or screenshot background |
 | Compositor | picom | Compositing with fully opaque windows and no visual effects; stopped during XSecureLock |
 | Power authorization | polkit | Required logind backend for normal-user suspend/reboot/poweroff; D-Bus activated, no GUI agent or custom rules |
-| Audio | pipewire, pipewire-audio, pipewire-alsa, pipewire-pulse, wireplumber, alsa-ucm-conf, sof-firmware | Device profiles and firmware, with user-session routing for ALSA and PulseAudio clients |
+| Wi-Fi | wireless-regdb | Regulatory rules for supported Wi-Fi channels |
+| Audio | pipewire, pipewire-audio, pipewire-alsa, pipewire-pulse, wireplumber, rtkit, alsa-ucm-conf, sof-firmware | Device profiles, firmware, user-session audio routing, and D-Bus-activated realtime scheduling |
 | Media keys | playerctl | On-demand MPRIS transport commands |
 | Fonts | ttf-jetbrains-mono-nerd, noto-fonts, noto-fonts-emoji | Requested coding font, basic multilingual/emoji coverage |
-| Audit | mesa-utils, pciutils, psmisc | glxinfo, lspci and pstree; on demand |
+| Audit | mesa-utils, pciutils, psmisc, smartmontools | On-demand graphics, PCI, process, and drive health diagnostics |
 
 | Package built locally | Source and purpose |
 | --- | --- |

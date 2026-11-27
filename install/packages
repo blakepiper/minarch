@@ -14,6 +14,8 @@ xorg-xdpyinfo
 xorg-xinput
 xorg-xrdb
 xdg-utils
+# Wi-Fi regulatory database
+wireless-regdb
 # Bluetooth
 bluez
 bluez-utils
@@ -68,6 +70,7 @@ pipewire-audio
 pipewire-alsa
 wireplumber
 pipewire-pulse
+rtkit
 alsa-ucm-conf
 sof-firmware
 playerctl
@@ -90,3 +93,4 @@ noto-fonts-emoji
 mesa-utils
 pciutils
 psmisc
+smartmontools
