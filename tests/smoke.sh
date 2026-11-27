@@ -62,12 +62,14 @@ if command -v vim >/dev/null; then
 fi
 if command -v codex >/dev/null; then codex --version && pass 'Codex version' || fail 'Codex version'; fi
 # Repository policy checks distinguish user-owned services from Minarch choices.
-if grep -Eq '^(bluez|bluez-utils|blueman|networkmanager|dhcpcd|iwd|sddm|gdm|lightdm|swaybg)$' "$root/install/packages"; then
+if grep -Eq '^(blueman|networkmanager|dhcpcd|iwd|sddm|gdm|lightdm|swaybg)$' "$root/install/packages"; then
   fail 'Unexpected service package in manifest'
 else
-  pass 'No competing network manager, Bluetooth, display manager, or wallpaper daemon added'
+  pass 'No competing network manager, Bluetooth manager, display manager, or wallpaper daemon added'
 fi
-for unit in NetworkManager systemd-networkd dhcpcd bluetooth display-manager; do
+pacman -Q bluez bluez-utils >/dev/null && pass 'BlueZ packages installed' || fail 'BlueZ packages missing'
+systemctl is-enabled --quiet bluetooth.service && pass bluetooth.service || fail 'bluetooth.service is not enabled'
+for unit in NetworkManager systemd-networkd dhcpcd display-manager; do
   printf 'Existing %s: ' "$unit"
   systemctl is-enabled "$unit.service" 2>/dev/null || true
 done

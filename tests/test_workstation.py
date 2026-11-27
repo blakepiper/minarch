@@ -718,10 +718,10 @@ class RepositoryPolicy(unittest.TestCase):
     def test_manifest_and_firefox(self):
         packages = {line.split("#")[0].strip() for line in (ROOT / "install/packages").read_text().splitlines()}
         self.assertTrue({"openai-codex", "firefox-ublock-origin", "xsecurelock", "xss-lock",
-                         "greetd", "greetd-tuigreet"} <= packages)
+                         "greetd", "greetd-tuigreet", "bluez", "bluez-utils"} <= packages)
         self.assertIn("git", packages)
         self.assertNotIn("lazygit", packages)
-        banned = {"bluez", "blueman", "cups", "avahi", "networkmanager", "wl-clipboard", "sddm", "gnome-keyring"}
+        banned = {"blueman", "cups", "avahi", "networkmanager", "wl-clipboard", "sddm", "gnome-keyring"}
         self.assertFalse(banned & packages)
         self.assertTrue({"picom", "fastfetch", "xorg-xkbcomp"} <= packages)
         policies = json.loads((ROOT / "etc/firefox/policies/policies.json").read_text())["policies"]

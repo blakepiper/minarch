@@ -84,9 +84,10 @@ available mode in dmenu.
 The bar also shows the date and time and a battery runtime estimate when available.
 
 **Alt+S** opens or focuses Blix Settings. Its GTK interface includes display,
-audio, network, Bluetooth, power, input, and shortcuts. Network and Bluetooth
-controls use existing NetworkManager and BlueZ services when available. For
-external brightness, enable DDC/CI on the monitor. The slider controls the
+audio, network, Bluetooth, power, input, and shortcuts. Network controls use
+NetworkManager when available. The installer installs BlueZ and enables
+`bluetooth.service` for Bluetooth controls. For external brightness, enable
+DDC/CI on the monitor. The slider controls the
 first DDC/CI display and requires local access to its I²C device.
 The controls and GTK app are adapted from [Blix](https://github.com/blakepiper/blix).
 
@@ -418,7 +419,7 @@ minute.
 Blix Settings refreshes when focused, when switching pages, after edits, and
 when you press F5.
 
-Minarch does not enable another network manager, sshd, Bluetooth, printing,
+Minarch does not enable another network manager, sshd, printing,
 automounting, portals, a graphical privilege agent, keyrings,
 indexing, or a tuning daemon. Existing user services are reported and retained.
 No governors, sysctl settings, kernel command-line parameters, or filesystem

@@ -54,15 +54,12 @@ install_system() {
   else
     printf 'No discard-capable device detected; fstrim.timer unchanged.\n'
   fi
+  log 'Enable Bluetooth for Blix Settings'
+  sudo systemctl enable --now bluetooth.service
   log 'Existing services: report only; do not remove user-owned software'
-  for unit in NetworkManager systemd-networkd dhcpcd iwd bluetooth cups avahi-daemon ModemManager display-manager; do
+  for unit in NetworkManager systemd-networkd dhcpcd iwd cups avahi-daemon ModemManager display-manager; do
     printf '%s: ' "$unit"
     systemctl is-enabled "$unit.service" 2>/dev/null || true
-  done
-  for file in bluez bluez-utils blueman; do
-    if pacman -Q "$file" 2>/dev/null; then
-      printf 'Pre-existing Bluetooth package retained: %s\n' "$file"
-    fi
   done
   printf 'Networking ownership is unchanged. No network manager or sshd enabled.\n'
   printf 'Microcode packages are installed when appropriate; Minarch does not edit boot configuration.\n'
